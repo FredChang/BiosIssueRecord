@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BIOS Issue Recorder (Online)</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛠️</text></svg>">
+</head>
+<body>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <span class="brand-icon">💻</span>
+      <h1 class="brand-title">BIOS Issue Recorder</h1>
+      <div id="cloud-status" class="status-badge status-local" title="GitHub 連線狀態">
+        <span>🟡</span> 檢查連線中...
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-primary btn-sm" id="btn-new">
+        <span>➕</span> 新增 Issue
+      </button>
+      <button class="btn btn-secondary btn-sm" id="btn-sync" title="從 GitHub 同步最新資料">
+        <span>🔄</span> 同步資料
+      </button>
+      <button class="btn btn-outline btn-sm" id="btn-import-export" title="匯入 / 匯出資料">
+        <span>📦</span> 備份與匯出
+      </button>
+      <button class="btn btn-outline btn-sm" id="btn-settings" title="設定 GitHub 儲存庫與 Token">
+        <span>⚙️</span> 設定
+      </button>
+      <button class="btn btn-outline btn-sm" id="btn-theme-toggle" title="切換深色/淺色模式">
+        🌙
+      </button>
+    </div>
+  </header>
+
+  <!-- App Layout -->
+  <div class="app-layout">
+    <!-- Sidebar / Issue List -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-top-row">
+          <div class="sidebar-title">
+            <span>問題清單</span>
+            <span class="badge-count" id="issue-count">0 / 0</span>
+          </div>
+          <button class="btn btn-xs btn-outline" id="btn-clear-filter" title="重設搜尋與篩選">重設篩選</button>
+        </div>
+        
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-input" class="search-input" placeholder="搜尋標題、ID、描述、平台、作者..." />
+        </div>
+
+        <div class="filter-grid">
+          <select id="filter-platform" class="filter-select">
+            <option value="">所有平台 (All Platforms)</option>
+          </select>
+          <select id="filter-status" class="filter-select">
+            <option value="">所有狀態 (All Status)</option>
+            <option value="Open">Open</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Verified">Verified</option>
+            <option value="Resolved">Resolved</option>
+            <option value="Closed">Closed</option>
+          </select>
+        </div>
+        <div class="filter-grid">
+          <select id="filter-priority" class="filter-select">
+            <option value="">所有優先級 (All Priority)</option>
+            <option value="P1">P1 (Critical)</option>
+            <option value="P2">P2 (High)</option>
+            <option value="P3">P3 (Medium)</option>
+            <option value="P4">P4 (Low)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sidebar-list" id="issue-list">
+        <!-- Dynamic Issue Items -->
+      </div>
+    </aside>
+
+    <!-- Main Content / Issue Editor -->
+    <main class="main-content">
+      <div class="editor-container">
+        <div class="editor-card">
+          <!-- Editor Header -->
+          <div class="editor-header">
+            <div class="editor-title" id="form-header-title">
+              編輯 Issue
+            </div>
+            <div class="editor-actions">
+              <button class="btn btn-outline btn-sm" id="btn-copy-md" disabled title="複製當前 Issue 為 Markdown 格式">
+                📋 複製 MD
+              </button>
+              <button class="btn btn-outline btn-sm" id="btn-export-md" disabled title="匯出為獨立 Markdown 檔案">
+                📄 匯出 MD
+              </button>
+              <button class="btn btn-danger btn-sm" id="btn-delete" disabled>
+                🗑️ 刪除
+              </button>
+              <button class="btn btn-primary" id="btn-save">
+                💾 儲存 Issue
+              </button>
+            </div>
+          </div>
+
+          <!-- Similarity Warning Banner -->
+          <div class="similarity-banner" id="similarity-banner">
+            <div class="similarity-header">
+              <span>⚠️ 偵測到可能重複或相似的歷史 Issue：</span>
+            </div>
+            <div class="similarity-list" id="similarity-list"></div>
+          </div>
+
+          <!-- Issue Form -->
+          <form id="issue-form" class="form-grid" onsubmit="return false;">
+            <!-- Row 1: ID, Date, Reporter -->
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="issue-id">Issue ID</label>
+                <input type="text" id="issue-id" class="form-input" placeholder="0001" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="issue-date">Date (日期)</label>
+                <div class="input-with-action">
+                  <input type="text" id="issue-date" class="form-input" placeholder="YYYY/MM/DD" />
+                  <button type="button" class="btn btn-outline btn-xs" id="btn-set-today">今日</button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="issue-reporter">Reporter (回報者)</label>
+                <input type="text" id="issue-reporter" class="form-input" placeholder="例如：Fred Chang" />
+              </div>
+            </div>
+
+            <!-- Row 2: Platform, BIOS Ver, BMC Ver -->
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="issue-platform">Platform (平台)</label>
+                <input type="text" id="issue-platform" class="form-input" list="platform-presets" placeholder="例如：AMD Turin, AMD Genoa, Intel Birch Stream..." />
+                <datalist id="platform-presets">
+                  <option value="AMD AM5"></option>
+                  <option value="AMD Genoa"></option>
+                  <option value="AMD Turin"></option>
+                  <option value="AMD Bergamo"></option>
+                  <option value="AMD Siena"></option>
+                  <option value="Intel Eagle Stream"></option>
+                  <option value="Intel Birch Stream"></option>
+                </datalist>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="issue-bios-version">BIOS Version</label>
+                <input type="text" id="issue-bios-version" class="form-input" placeholder="例如：0.01" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="issue-bmc-version">BMC Version</label>
+                <input type="text" id="issue-bmc-version" class="form-input" placeholder="例如：1.00" />
+              </div>
+            </div>
+
+            <!-- Row 3: Status, Priority, Reproduce Rate, Ref Board -->
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="issue-status">Status (狀態)</label>
+                <select id="issue-status" class="form-select">
+                  <option value="Open">Open</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Verified">Verified</option>
+                  <option value="Resolved">Resolved</option>
+                  <option value="Closed">Closed</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="issue-priority">Priority (優先級)</label>
+                <select id="issue-priority" class="form-select">
+                  <option value="P1">P1 (Critical / 最緊急)</option>
+                  <option value="P2">P2 (High / 高)</option>
+                  <option value="P3">P3 (Medium / 中)</option>
+                  <option value="P4">P4 (Low / 低)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="issue-reproduce-rate">Reproduce Rate (復現率)</label>
+                <input type="text" id="issue-reproduce-rate" class="form-input" placeholder="例如：100% 或 5/10" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="issue-reproduced-on-ref">Reproduced on Ref Board</label>
+                <select id="issue-reproduced-on-ref" class="form-select">
+                  <option value="No">No (否)</option>
+                  <option value="Yes">Yes (是)</option>
+                  <option value="N/A">N/A (不適用)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Row 4: Current AGESA -->
+            <div class="form-row">
+              <div class="form-group full-width">
+                <label class="form-label" for="issue-current-agesa">Current AGESA (當前 AGESA 版本)</label>
+                <input type="text" id="issue-current-agesa" class="form-input" placeholder="例如：1.0.0.0" />
+              </div>
+            </div>
+
+            <!-- Row 5: Title -->
+            <div class="form-group full-width">
+              <label class="form-label" for="issue-title">Issue Title (問題簡述 / 標題) <span style="color:var(--danger)">*</span></label>
+              <input type="text" id="issue-title" class="form-input" placeholder="例如：[S907] CPU frequency can't reach the SPEC" required />
+            </div>
+
+            <!-- Row 6: Configuration -->
+            <div class="form-group full-width">
+              <label class="form-label" for="issue-configuration">Configuration (測試配置 / 硬體規格)</label>
+              <textarea id="issue-configuration" class="form-textarea" rows="4" placeholder="CPU: &#10;DIMM: &#10;OS: &#10;Storage: "></textarea>
+            </div>
+
+            <!-- Row 7: Description -->
+            <div class="form-group full-width">
+              <label class="form-label" for="issue-description">Description (問題詳細描述) <span style="color:var(--danger)">*</span></label>
+              <textarea id="issue-description" class="form-textarea" rows="4" placeholder="請詳細說明問題現象、規格與實測差異..." required></textarea>
+            </div>
+
+            <!-- Row 8: Steps -->
+            <div class="form-group full-width">
+              <label class="form-label" for="issue-steps">Steps to Reproduce (重現步驟)</label>
+              <textarea id="issue-steps" class="form-textarea" rows="4" placeholder="1. Boot to OS&#10;2. Run tool&#10;3. Check result"></textarea>
+            </div>
+
+            <!-- Row 9: Rootcause / Solution -->
+            <div class="form-group full-width">
+              <label class="form-label" for="issue-rootcause">Root Cause / Solution / Tags (根本原因與解法 / 標籤)</label>
+              <textarea id="issue-rootcause" class="form-textarea" rows="3" placeholder="根本原因分析、修復方案或關聯項目標籤..."></textarea>
+            </div>
+
+            <!-- Row 10: Attachments -->
+            <div class="form-group full-width">
+              <label class="form-label">Attachments (附件與檔案連結)</label>
+              <div class="attachment-box">
+                <ul id="attachment-list" class="attachment-list">
+                  <!-- Attachment items -->
+                </ul>
+                <div class="attachment-controls">
+                  <input type="text" id="new-attachment-input" class="form-input" placeholder="輸入本機檔案路徑、雲端網址 (URL) 或點右側按鈕上傳..." />
+                  <button type="button" class="btn btn-secondary btn-sm" id="btn-add-attachment">加入路徑</button>
+                  <button type="button" class="btn btn-outline btn-sm" id="btn-upload-file">📁 上傳檔案/圖片</button>
+                  <input type="file" id="file-attachment-input" style="display:none;" />
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal" id="settings-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">⚙️ GitHub 雲端儲存與同步設定</h3>
+        <button class="btn-remove-attachment modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="setting-github-repo">GitHub 儲存庫 (Owner/Repo)</label>
+          <input type="text" id="setting-github-repo" class="form-input" value="FredChang/BiosIssueRecord" placeholder="例如：FredChang/BiosIssueRecord" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="setting-github-branch">分支名稱 (Branch)</label>
+          <input type="text" id="setting-github-branch" class="form-input" value="main" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="setting-github-filepath">資料存放路徑 (File Path)</label>
+          <input type="text" id="setting-github-filepath" class="form-input" value="data/issues.json" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="setting-github-token">
+            GitHub Personal Access Token (PAT)
+            <a href="https://github.com/settings/tokens/new?scopes=repo&description=BiosIssueRecord-Web-Sync" target="_blank" style="font-size:11px;color:var(--primary);margin-left:6px;" rel="noopener">點此建立 Token (勾選 repo)</a>
+          </label>
+          <input type="password" id="setting-github-token" class="form-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
+          <small style="color:var(--text-muted);font-size:11px;margin-top:2px;">
+            Token 將安全儲存於您目前的瀏覽器 (localStorage) 中，直接透過 GitHub REST API 進行寫入與版本記錄。
+          </small>
+        </div>
+        <div id="connection-status-msg" class="status-msg" style="display:none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btn-test-connection">🔌 測試連線</button>
+        <button type="button" class="btn btn-outline modal-close">取消</button>
+        <button type="button" class="btn btn-primary" id="btn-save-settings">儲存設定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import / Export Modal -->
+  <div class="modal" id="import-export-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">📦 備份、匯入與匯出</h3>
+        <button class="btn-remove-attachment modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <h4>匯出資料 (Export)</h4>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-outline" id="btn-export-json">💾 匯出完整 JSON 備份檔</button>
+            <button class="btn btn-outline" id="btn-export-all-md">📄 匯出所有 Issue 總報告 (Markdown)</button>
+          </div>
+
+          <hr style="border:0;border-top:1px solid var(--border-color);margin:8px 0;" />
+
+          <h4>匯入資料 (Import)</h4>
+          <div class="form-group">
+            <label class="form-label">從 JSON 備份檔匯入：</label>
+            <input type="file" id="import-json-file" accept=".json" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">從 Markdown 檔案匯入單筆 Issue：</label>
+            <input type="file" id="import-md-file" accept=".md,.txt" class="form-input" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline modal-close">關閉</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="js/similarity.js"></script>
+  <script src="js/github-sync.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
