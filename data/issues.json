@@ -211,7 +211,7 @@
     "platform": "Intel Birch Stream SP",
     "reporter": "元始天尊",
     "rootcause": "",
-    "attachments": "0008_Setup settings.jpg\n0008_IPS feedback.jpg\n0008_IPS feedback2.jpg\n0008_IPS feedback3.jpg",
+    "attachments": "",
     "description": "According to current data, we believe Promote Warnings = Enabled would caused system hang at memory training.\nPromotion knobs (Promote Warnings and MRC Promote Warnings) enabled, BIOS will not disable the DIMMs on the channel and continue booting and will consider the failure as a fatal error then hang the system.\nIf bad part still installed and both promotion knobs are disabled, EWL Major Code = 0x26, Minor Code = 0x1 will still occur (failure is still consistence) but system will go through disabled channel flow and drop to F-config to boot continuously.\nIf you get the opposite result, please feel free to share us higher debug level serial log to analyze further.",
     "configuration": "S105 Board Configs: 2P (Dual Socket) with 32 DIMM slots (2DPC).\nPlatform: Intel Birch Stream SP\nSource Control Label: 5.35_0ACQZ_3545P53_GNRAP_GNRSP_SRFSP_110 (latest revision)\nCPU: Intel® Xeon® 6507P Processor\nMemory: Samsung DRx8 32GB RDIMM",
     "current_agesa": "5.35_0ACQZ_3545P53_GNRAP_GNRSP_SRFSP_110",
