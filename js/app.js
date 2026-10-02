@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize
     async init() {
+      this.checkUrlParameters();
       this.bindElements();
       this.bindEvents();
       this.applyTheme();
@@ -21,6 +22,37 @@ document.addEventListener('DOMContentLoaded', () => {
         this.selectIssue(this.issues[0]);
       } else {
         this.resetForm();
+      }
+    },
+
+    checkUrlParameters() {
+      // Allow passing ?token=ghp_... or #token=ghp_... or #key=ghp_...
+      const hash = window.location.hash.substring(1);
+      const searchParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(hash);
+
+      const token = searchParams.get('token') || hashParams.get('token') || hashParams.get('key');
+      const repo = searchParams.get('repo') || hashParams.get('repo');
+
+      let updated = false;
+      const config = {};
+      if (token && token.trim()) {
+        config.token = token.trim();
+        updated = true;
+      }
+      if (repo && repo.trim()) {
+        config.repo = repo.trim();
+        updated = true;
+      }
+
+      if (updated) {
+        GitHubSync.saveConfig(config);
+        // Clean URL to prevent exposing token in address bar or browser history
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState(null, '', cleanUrl);
+        setTimeout(() => {
+          this.showToast('✨ 已自動載入並套用雲端同步金鑰！', 'success');
+        }, 800);
       }
     },
 
