@@ -472,6 +472,58 @@ body {
   gap: 8px;
 }
 
+/* Security & NDA Warning Banner */
+.security-warning-card {
+  background: #fff8e6;
+  border: 1px solid #fed7aa;
+  border-left: 4px solid #f97316;
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  box-shadow: var(--shadow-sm);
+}
+[data-theme="dark"] .security-warning-card {
+  background: #381a04;
+  border-color: #9a3412;
+  border-left-color: #fb923c;
+}
+
+.security-warning-icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.security-warning-content {
+  flex: 1;
+}
+
+.security-warning-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #c2410c;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+[data-theme="dark"] .security-warning-title {
+  color: #fdba74;
+}
+
+.security-warning-text {
+  font-size: 12.5px;
+  color: #7c2d12;
+  line-height: 1.6;
+}
+[data-theme="dark"] .security-warning-text {
+  color: #fed7aa;
+}
+
 /* Similarity Warning Banner */
 .similarity-banner {
   background: #fffbeb;
