@@ -17,7 +17,11 @@ document.addEventListener('DOMContentLoaded', () => {
       this.applyTheme();
       this.loadSettings();
       await this.loadIssues();
-      this.resetForm();
+      if (this.issues && this.issues.length > 0) {
+        this.selectIssue(this.issues[0]);
+      } else {
+        this.resetForm();
+      }
     },
 
     bindElements() {
@@ -97,6 +101,12 @@ document.addEventListener('DOMContentLoaded', () => {
       this.btnImportExport.addEventListener('click', () => this.openModal(this.importExportModal));
       this.btnThemeToggle.addEventListener('click', () => this.toggleTheme());
       this.btnSubmitComment.addEventListener('click', () => this.addComment());
+      this.txtCommentInput.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          e.preventDefault();
+          this.addComment();
+        }
+      });
 
       // Search & Filter Events
       this.txtSearch.addEventListener('input', () => this.renderIssueList());
@@ -724,6 +734,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       this.txtCommentInput.value = '';
       this.renderComments(this.currentIssue.comments);
+      setTimeout(() => {
+        if (this.commentsListEl && this.commentsListEl.lastElementChild) {
+          this.commentsListEl.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }, 50);
 
       this.btnSubmitComment.disabled = true;
       this.btnSubmitComment.innerHTML = '<span class="spinner"></span> 傳送中...';
