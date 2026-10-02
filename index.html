@@ -43,7 +43,7 @@
       <div class="sidebar-header">
         <div class="sidebar-top-row">
           <div class="sidebar-title">
-            <span>問題清單</span>
+            <span>經驗分享清單</span>
             <span class="badge-count" id="issue-count">0 / 0</span>
           </div>
           <button class="btn btn-xs btn-outline" id="btn-clear-filter" title="重設搜尋與篩選">重設篩選</button>
@@ -51,7 +51,7 @@
         
         <div class="search-box">
           <span class="search-icon">🔍</span>
-          <input type="text" id="search-input" class="search-input" placeholder="搜尋標題、ID、描述、平台、作者..." />
+          <input type="text" id="search-input" class="search-input" placeholder="搜尋標題、ID、描述、平台、回報仙尊..." />
         </div>
 
         <div class="filter-grid">
@@ -68,12 +68,14 @@
           </select>
         </div>
         <div class="filter-grid">
-          <select id="filter-priority" class="filter-select">
-            <option value="">所有優先級 (All Priority)</option>
-            <option value="P1">P1 (Critical)</option>
-            <option value="P2">P2 (High)</option>
-            <option value="P3">P3 (Medium)</option>
-            <option value="P4">P4 (Low)</option>
+          <select id="filter-reporter" class="filter-select">
+            <option value="">所有回報尊者 (All)</option>
+            <option value="元始天尊">元始天尊</option>
+            <option value="靈寶天尊">靈寶天尊</option>
+            <option value="道德天尊">道德天尊</option>
+            <option value="太上老君">太上老君</option>
+            <option value="通天教主">通天教主</option>
+            <option value="菩提祖師">菩提祖師</option>
           </select>
         </div>
       </div>
@@ -111,7 +113,7 @@
           <!-- Similarity Warning Banner -->
           <div class="similarity-banner" id="similarity-banner">
             <div class="similarity-header">
-              <span>⚠️ 偵測到可能重複或相似的歷史 Issue：</span>
+              <span>⚠️ 偵測到可能重複或相似的歷史經驗：</span>
             </div>
             <div class="similarity-list" id="similarity-list"></div>
           </div>
@@ -132,12 +134,19 @@
                 </div>
               </div>
               <div class="form-group">
-                <label class="form-label" for="issue-reporter">Reporter (回報者)</label>
-                <input type="text" id="issue-reporter" class="form-input" placeholder="例如：Fred Chang" />
+                <label class="form-label" for="issue-reporter">回報者 (Reporter 代號)</label>
+                <select id="issue-reporter" class="form-select">
+                  <option value="元始天尊">元始天尊</option>
+                  <option value="靈寶天尊">靈寶天尊</option>
+                  <option value="道德天尊">道德天尊</option>
+                  <option value="太上老君">太上老君</option>
+                  <option value="通天教主">通天教主</option>
+                  <option value="菩提祖師">菩提祖師</option>
+                </select>
               </div>
             </div>
 
-            <!-- Row 2: Platform, BIOS Ver, BMC Ver -->
+            <!-- Row 2: Platform, Reproduce Rate, Status, Ref Board -->
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label" for="issue-platform">Platform (平台)</label>
@@ -153,39 +162,18 @@
                 </datalist>
               </div>
               <div class="form-group">
-                <label class="form-label" for="issue-bios-version">BIOS Version</label>
-                <input type="text" id="issue-bios-version" class="form-input" placeholder="例如：0.01" />
+                <label class="form-label" for="issue-reproduce-rate">Reproduce Rate (復現率)</label>
+                <input type="text" id="issue-reproduce-rate" class="form-input" placeholder="例如：100% 或 5/10" />
               </div>
-              <div class="form-group">
-                <label class="form-label" for="issue-bmc-version">BMC Version</label>
-                <input type="text" id="issue-bmc-version" class="form-input" placeholder="例如：1.00" />
-              </div>
-            </div>
-
-            <!-- Row 3: Status, Priority, Reproduce Rate, Ref Board -->
-            <div class="form-row">
               <div class="form-group">
                 <label class="form-label" for="issue-status">Status (狀態)</label>
                 <select id="issue-status" class="form-select">
-                  <option value="Open">Open</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Verified">Verified</option>
-                  <option value="Resolved">Resolved</option>
-                  <option value="Closed">Closed</option>
+                  <option value="Open">Open (待解決)</option>
+                  <option value="In Progress">In Progress (處理中)</option>
+                  <option value="Verified">Verified (已驗證)</option>
+                  <option value="Resolved">Resolved (已解決)</option>
+                  <option value="Closed">Closed (結案)</option>
                 </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="issue-priority">Priority (優先級)</label>
-                <select id="issue-priority" class="form-select">
-                  <option value="P1">P1 (Critical / 最緊急)</option>
-                  <option value="P2">P2 (High / 高)</option>
-                  <option value="P3">P3 (Medium / 中)</option>
-                  <option value="P4">P4 (Low / 低)</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="issue-reproduce-rate">Reproduce Rate (復現率)</label>
-                <input type="text" id="issue-reproduce-rate" class="form-input" placeholder="例如：100% 或 5/10" />
               </div>
               <div class="form-group">
                 <label class="form-label" for="issue-reproduced-on-ref">Reproduced on Ref Board</label>
@@ -197,45 +185,45 @@
               </div>
             </div>
 
-            <!-- Row 4: Current AGESA -->
+            <!-- Row 3: Current AGESA / Microcode -->
             <div class="form-row">
               <div class="form-group full-width">
-                <label class="form-label" for="issue-current-agesa">Current AGESA (當前 AGESA 版本)</label>
-                <input type="text" id="issue-current-agesa" class="form-input" placeholder="例如：1.0.0.0" />
+                <label class="form-label" for="issue-current-agesa">Current AGESA / Microcode (版本代號)</label>
+                <input type="text" id="issue-current-agesa" class="form-input" placeholder="例如：1.0.0.0 或 0x1234" />
               </div>
             </div>
 
-            <!-- Row 5: Title -->
+            <!-- Row 4: Title -->
             <div class="form-group full-width">
               <label class="form-label" for="issue-title">Issue Title (問題簡述 / 標題) <span style="color:var(--danger)">*</span></label>
-              <input type="text" id="issue-title" class="form-input" placeholder="例如：[S907] CPU frequency can't reach the SPEC" required />
+              <input type="text" id="issue-title" class="form-input" placeholder="例如：CPU frequency can't reach the SPEC under high workload" required />
             </div>
 
-            <!-- Row 6: Configuration -->
+            <!-- Row 5: Configuration -->
             <div class="form-group full-width">
               <label class="form-label" for="issue-configuration">Configuration (測試配置 / 硬體規格)</label>
-              <textarea id="issue-configuration" class="form-textarea" rows="4" placeholder="CPU: &#10;DIMM: &#10;OS: &#10;Storage: "></textarea>
+              <textarea id="issue-configuration" class="form-textarea" rows="3" placeholder="CPU: &#10;DIMM: &#10;OS: &#10;Storage: "></textarea>
             </div>
 
-            <!-- Row 7: Description -->
+            <!-- Row 6: Description -->
             <div class="form-group full-width">
-              <label class="form-label" for="issue-description">Description (問題詳細描述) <span style="color:var(--danger)">*</span></label>
+              <label class="form-label" for="issue-description">Description (問題現象與規格差異描述) <span style="color:var(--danger)">*</span></label>
               <textarea id="issue-description" class="form-textarea" rows="4" placeholder="請詳細說明問題現象、規格與實測差異..." required></textarea>
             </div>
 
-            <!-- Row 8: Steps -->
+            <!-- Row 7: Steps -->
             <div class="form-group full-width">
               <label class="form-label" for="issue-steps">Steps to Reproduce (重現步驟)</label>
               <textarea id="issue-steps" class="form-textarea" rows="4" placeholder="1. Boot to OS&#10;2. Run tool&#10;3. Check result"></textarea>
             </div>
 
-            <!-- Row 9: Rootcause / Solution -->
+            <!-- Row 8: Rootcause / Solution / Debug Notes -->
             <div class="form-group full-width">
-              <label class="form-label" for="issue-rootcause">Root Cause / Solution / Tags (根本原因與解法 / 標籤)</label>
-              <textarea id="issue-rootcause" class="form-textarea" rows="3" placeholder="根本原因分析、修復方案或關聯項目標籤..."></textarea>
+              <label class="form-label" for="issue-rootcause">Root Cause / Debug Notes / Solution (根本原因、除錯經驗與解決方案)</label>
+              <textarea id="issue-rootcause" class="form-textarea" rows="4" placeholder="分享根本原因分析、除錯經驗、參數設定解法或修正方向..."></textarea>
             </div>
 
-            <!-- Row 10: Attachments -->
+            <!-- Row 9: Attachments -->
             <div class="form-group full-width">
               <label class="form-label">Attachments (附件與檔案連結)</label>
               <div class="attachment-box">
@@ -243,9 +231,9 @@
                   <!-- Attachment items -->
                 </ul>
                 <div class="attachment-controls">
-                  <input type="text" id="new-attachment-input" class="form-input" placeholder="輸入本機檔案路徑、雲端網址 (URL) 或點右側按鈕上傳..." />
-                  <button type="button" class="btn btn-secondary btn-sm" id="btn-add-attachment">加入路徑</button>
-                  <button type="button" class="btn btn-outline btn-sm" id="btn-upload-file">📁 上傳檔案/圖片</button>
+                  <input type="text" id="new-attachment-input" class="form-input" placeholder="輸入雲端連結 (URL) 或點右側按鈕上傳截圖..." />
+                  <button type="button" class="btn btn-secondary btn-sm" id="btn-add-attachment">加入連結</button>
+                  <button type="button" class="btn btn-outline btn-sm" id="btn-upload-file">📁 上傳圖片/檔案</button>
                   <input type="file" id="file-attachment-input" style="display:none;" />
                 </div>
               </div>

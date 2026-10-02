@@ -1,5 +1,6 @@
 /**
  * BIOS Issue Recorder - Main Application Logic
+ * Desensitized & Anonymized for Cross-Company Experience Sharing
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -29,13 +30,10 @@ document.addEventListener('DOMContentLoaded', () => {
       this.form = document.getElementById('issue-form');
       this.txtIssueId = document.getElementById('issue-id');
       this.txtDate = document.getElementById('issue-date');
-      this.txtReporter = document.getElementById('issue-reporter');
+      this.cmbReporter = document.getElementById('issue-reporter');
       this.txtPlatform = document.getElementById('issue-platform');
-      this.txtBiosVersion = document.getElementById('issue-bios-version');
-      this.txtBmcVersion = document.getElementById('issue-bmc-version');
       this.txtReproduceRate = document.getElementById('issue-reproduce-rate');
       this.cmbStatus = document.getElementById('issue-status');
-      this.cmbPriority = document.getElementById('issue-priority');
       this.cmbReproducedOnRef = document.getElementById('issue-reproduced-on-ref');
       this.txtTitle = document.getElementById('issue-title');
       this.txtCurrentAgesa = document.getElementById('issue-current-agesa');
@@ -62,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
       this.txtSearch = document.getElementById('search-input');
       this.filterPlatform = document.getElementById('filter-platform');
       this.filterStatus = document.getElementById('filter-status');
-      this.filterPriority = document.getElementById('filter-priority');
+      this.filterReporter = document.getElementById('filter-reporter');
       this.btnClearFilter = document.getElementById('btn-clear-filter');
 
       // Similarity Banner
@@ -72,8 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
       // Modals
       this.settingsModal = document.getElementById('settings-modal');
       this.importExportModal = document.getElementById('import-export-modal');
-      this.markdownModal = document.getElementById('markdown-modal');
-      this.markdownPreviewContent = document.getElementById('markdown-preview-content');
 
       // Attachments state
       this.currentAttachments = [];
@@ -95,12 +91,12 @@ document.addEventListener('DOMContentLoaded', () => {
       this.txtSearch.addEventListener('input', () => this.renderIssueList());
       this.filterPlatform.addEventListener('change', () => this.renderIssueList());
       this.filterStatus.addEventListener('change', () => this.renderIssueList());
-      this.filterPriority.addEventListener('change', () => this.renderIssueList());
+      this.filterReporter.addEventListener('change', () => this.renderIssueList());
       this.btnClearFilter.addEventListener('click', () => {
         this.txtSearch.value = '';
         this.filterPlatform.value = '';
         this.filterStatus.value = '';
-        this.filterPriority.value = '';
+        this.filterReporter.value = '';
         this.renderIssueList();
       });
 
@@ -227,12 +223,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const keyword = (this.txtSearch.value || '').toLowerCase().trim();
       const platformFilter = this.filterPlatform.value;
       const statusFilter = this.filterStatus.value;
-      const priorityFilter = this.filterPriority.value;
+      const reporterFilter = this.filterReporter.value;
 
       const filtered = this.issues.filter(issue => {
         if (platformFilter && issue.platform !== platformFilter) return false;
         if (statusFilter && issue.status !== statusFilter) return false;
-        if (priorityFilter && issue.priority !== priorityFilter) return false;
+        if (reporterFilter && issue.reporter !== reporterFilter) return false;
 
         if (keyword) {
           const matchTitle = (issue.title || '').toLowerCase().includes(keyword);
@@ -254,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (filtered.length === 0) {
         this.issueListEl.innerHTML = `
           <div class="empty-list-state">
-            <p>沒有符合條件的 Issue</p>
+            <p>沒有符合條件的經驗紀錄</p>
             <button class="btn btn-sm btn-outline" id="btn-empty-reset">重設搜尋條件</button>
           </div>
         `;
@@ -262,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
           this.txtSearch.value = '';
           this.filterPlatform.value = '';
           this.filterStatus.value = '';
-          this.filterPriority.value = '';
+          this.filterReporter.value = '';
           this.renderIssueList();
         });
         return;
@@ -272,20 +268,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const item = document.createElement('div');
         item.className = `issue-item ${this.currentIssue && (this.currentIssue.id === issue.id || this.currentIssue.issue_id === issue.issue_id) ? 'active' : ''}`;
         
-        const priorityClass = `badge-priority-${(issue.priority || 'P3').toLowerCase()}`;
         const statusClass = `badge-status-${(issue.status || 'Open').toLowerCase().replace(/\s+/g, '-')}`;
 
         item.innerHTML = `
           <div class="issue-item-header">
             <span class="issue-item-id">#${this.escapeHtml(issue.issue_id || String(issue.id))}</span>
             <div class="issue-item-badges">
-              <span class="badge ${priorityClass}">${this.escapeHtml(issue.priority || 'P3')}</span>
               <span class="badge ${statusClass}">${this.escapeHtml(issue.status || 'Open')}</span>
             </div>
           </div>
           <div class="issue-item-title" title="${this.escapeHtml(issue.title || '')}">${this.escapeHtml(issue.title || '(未命名問題)')}</div>
           <div class="issue-item-footer">
             <span class="issue-item-platform">${this.escapeHtml(issue.platform || 'General')}</span>
+            <span class="issue-item-reporter">🧙 ${this.escapeHtml(issue.reporter || '元始天尊')}</span>
             <span class="issue-item-date">${this.escapeHtml(issue.date || '')}</span>
           </div>
         `;
@@ -302,13 +297,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       this.txtIssueId.value = issue.issue_id || String(issue.id);
       this.txtDate.value = issue.date || '';
-      this.txtReporter.value = issue.reporter || '';
+      this.cmbReporter.value = issue.reporter || '元始天尊';
       this.txtPlatform.value = issue.platform || '';
-      this.txtBiosVersion.value = issue.bios_version || '';
-      this.txtBmcVersion.value = issue.bmc_version || '';
       this.txtReproduceRate.value = issue.reproduce_rate || '';
       this.cmbStatus.value = issue.status || 'Open';
-      this.cmbPriority.value = issue.priority || 'P2';
       this.cmbReproducedOnRef.value = issue.reproduced_on_ref || 'No';
       this.txtTitle.value = issue.title || '';
       this.txtCurrentAgesa.value = issue.current_agesa || '';
@@ -359,17 +351,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
       this.txtIssueId.value = nextIdStr;
       this.txtDate.value = todayStr;
-      this.txtReporter.value = localStorage.getItem('last_reporter_name') || '';
+      this.cmbReporter.value = localStorage.getItem('last_reporter_name') || '元始天尊';
       this.txtPlatform.value = '';
-      this.txtBiosVersion.value = '';
-      this.txtBmcVersion.value = '';
       this.txtReproduceRate.value = '100%';
       this.cmbStatus.value = 'Open';
-      this.cmbPriority.value = 'P2';
       this.cmbReproducedOnRef.value = 'No';
       this.txtTitle.value = '';
       this.txtCurrentAgesa.value = '';
-      this.txtConfiguration.value = 'CPU: \nDIMM: \nOS: \nStorage: ';
+      this.txtConfiguration.value = 'CPU: \nDIMM: \nOS: ';
       this.txtDescription.value = '';
       this.txtSteps.value = '1. \n2. \n3. ';
       this.txtRootcause.value = '';
@@ -387,9 +376,9 @@ document.addEventListener('DOMContentLoaded', () => {
     updateFormTitle() {
       const headerTitle = document.getElementById('form-header-title');
       if (this.currentIssue) {
-        headerTitle.innerHTML = `編輯 Issue <span class="badge badge-primary">#${this.escapeHtml(this.currentIssue.issue_id || String(this.currentIssue.id))}</span>`;
+        headerTitle.innerHTML = `編輯經驗紀錄 <span class="badge badge-primary">#${this.escapeHtml(this.currentIssue.issue_id || String(this.currentIssue.id))}</span>`;
       } else {
-        headerTitle.innerHTML = `新增 Issue <span class="badge badge-outline">#${this.escapeHtml(this.txtIssueId.value || 'New')}</span>`;
+        headerTitle.innerHTML = `新增經驗紀錄 <span class="badge badge-outline">#${this.escapeHtml(this.txtIssueId.value || 'New')}</span>`;
       }
     },
 
@@ -398,13 +387,10 @@ document.addEventListener('DOMContentLoaded', () => {
         id: this.currentIssue ? this.currentIssue.id : (Date.now()),
         issue_id: this.txtIssueId.value.trim() || '0001',
         date: this.txtDate.value.trim(),
-        reporter: this.txtReporter.value.trim(),
+        reporter: this.cmbReporter.value,
         platform: this.txtPlatform.value.trim(),
-        bios_version: this.txtBiosVersion.value.trim(),
-        bmc_version: this.txtBmcVersion.value.trim(),
         reproduce_rate: this.txtReproduceRate.value.trim(),
         status: this.cmbStatus.value,
-        priority: this.cmbPriority.value,
         reproduced_on_ref: this.cmbReproducedOnRef.value,
         title: this.txtTitle.value.trim(),
         current_agesa: this.txtCurrentAgesa.value.trim(),
@@ -420,20 +406,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const formData = this.getFormData();
 
       if (!formData.title) {
-        this.showToast('錯誤：Title (問題標題) 不能為空', 'error');
+        this.showToast('錯誤：Title (問題簡述) 不能為空', 'error');
         this.txtTitle.focus();
         return;
       }
       if (!formData.description) {
-        this.showToast('錯誤：Description (問題描述) 不能為空', 'error');
+        this.showToast('錯誤：Description (現象描述) 不能為空', 'error');
         this.txtDescription.focus();
         return;
       }
 
-      // Save reporter name for convenience
-      if (formData.reporter) {
-        localStorage.setItem('last_reporter_name', formData.reporter);
-      }
+      // Save preferred reporter avatar for next time
+      localStorage.setItem('last_reporter_name', formData.reporter);
 
       this.btnSave.disabled = true;
       this.btnSave.innerHTML = '<span class="spinner"></span> 儲存中...';
@@ -451,7 +435,6 @@ document.addEventListener('DOMContentLoaded', () => {
           // Check for duplicate Issue ID
           const existing = this.issues.find(i => i.issue_id === formData.issue_id);
           if (existing) {
-            // Auto increment
             let max = 0;
             this.issues.forEach(i => {
               const num = parseInt(i.issue_id, 10);
@@ -563,7 +546,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAttachmentList() {
       this.attachmentListEl.innerHTML = '';
       if (this.currentAttachments.length === 0) {
-        this.attachmentListEl.innerHTML = '<li class="empty-attachment">尚無附件 (可輸入路徑/連結或上傳檔案)</li>';
+        this.attachmentListEl.innerHTML = '<li class="empty-attachment">尚無附件 (可輸入雲端網址或上傳截圖)</li>';
         return;
       }
 
@@ -591,7 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
     },
 
     getAttachmentDisplayName(path) {
-      if (path.startsWith('data:image/')) return '圖片附件 (Base64)';
+      if (path.startsWith('data:image/')) return '圖片附件 (截圖)';
       const parts = path.split(/[/\\]/);
       return parts[parts.length - 1] || path;
     },
@@ -610,7 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!file) return;
 
       if (file.size > 2 * 1024 * 1024) {
-        alert('為確保 GitHub 同步效能，直接嵌入的單一附件大小請勿超過 2MB。大檔案請使用外部雲端連結。');
+        alert('為確保 GitHub 同步效能，直接嵌入的單一附件大小請勿超過 2MB。');
       }
 
       const reader = new FileReader();
@@ -618,11 +601,10 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.onload = (ev) => {
           this.currentAttachments.push(ev.target.result);
           this.renderAttachmentList();
-          this.showToast(`已新增圖片附件：${file.name}`, 'success');
+          this.showToast(`已新增截圖附件：${file.name}`, 'success');
         };
         reader.readAsDataURL(file);
       } else {
-        // Just add filename or prompt
         this.currentAttachments.push(file.name);
         this.renderAttachmentList();
         this.showToast(`已新增檔案名稱：${file.name}`, 'info');
@@ -630,20 +612,17 @@ document.addEventListener('DOMContentLoaded', () => {
       this.fileAttachmentInput.value = '';
     },
 
-    // Markdown Generation (matching C# MarkdownService)
+    // Markdown Generation (Cleaned & Desensitized)
     generateMarkdown(issue) {
       return `## Issue #${issue.issue_id || issue.id}: ${issue.title}
 
 * **Date**: ${issue.date || 'N/A'}
-* **Reporter**: ${issue.reporter || 'N/A'}
+* **Reporter**: ${issue.reporter || '元始天尊'}
 * **Platform**: ${issue.platform || 'N/A'}
-* **BIOS Version**: ${issue.bios_version || 'N/A'}
-* **BMC Version**: ${issue.bmc_version || 'N/A'}
 * **Reproduce Rate**: ${issue.reproduce_rate || 'N/A'}
 * **Status**: ${issue.status || 'Open'}
-* **Priority**: ${issue.priority || 'P2'}
 * **Reproduced on Ref Board**: ${issue.reproduced_on_ref || 'No'}
-* **Current AGESA**: ${issue.current_agesa || 'N/A'}
+* **Current AGESA / Microcode**: ${issue.current_agesa || 'N/A'}
 
 ### Configuration
 \`\`\`
@@ -656,7 +635,7 @@ ${issue.description || 'N/A'}
 ### Steps to Reproduce
 ${issue.steps || 'N/A'}
 
-### Root Cause / Solution / Tags
+### Root Cause / Debug Notes / Solution
 ${issue.rootcause || 'N/A'}
 
 ### Attachments
@@ -689,7 +668,7 @@ ${issue.attachments ? issue.attachments.split('\n').filter(Boolean).map(a => `* 
         this.showToast('目前沒有 Issue 可匯出', 'warning');
         return;
       }
-      let content = `# BIOS Issues Report\n\nGenerated on: ${new Date().toLocaleString()}\nTotal Issues: ${this.issues.length}\n\n---\n\n`;
+      let content = `# BIOS Knowledge & Issue Sharing Report\n\nGenerated on: ${new Date().toLocaleString()}\nTotal Issues: ${this.issues.length}\n\n---\n\n`;
       this.issues.forEach(i => {
         content += this.generateMarkdown(i) + '\n';
       });
@@ -755,13 +734,10 @@ ${issue.attachments ? issue.attachments.split('\n').filter(Boolean).map(a => `* 
         issue_id: '',
         title: '',
         date: '',
-        reporter: '',
+        reporter: '元始天尊',
         platform: '',
-        bios_version: '',
-        bmc_version: '',
         reproduce_rate: '',
         status: 'Open',
-        priority: 'P2',
         reproduced_on_ref: 'No',
         current_agesa: '',
         configuration: '',
@@ -783,15 +759,12 @@ ${issue.attachments ? issue.attachments.split('\n').filter(Boolean).map(a => `* 
       };
 
       issue.date = getField(/\*\s*\*\*Date\*\*:\s*(.+)$/m);
-      issue.reporter = getField(/\*\s*\*\*Reporter\*\*:\s*(.+)$/m);
+      issue.reporter = getField(/\*\s*\*\*Reporter\*\*:\s*(.+)$/m) || '元始天尊';
       issue.platform = getField(/\*\s*\*\*Platform\*\*:\s*(.+)$/m);
-      issue.bios_version = getField(/\*\s*\*\*BIOS Version\*\*:\s*(.+)$/m);
-      issue.bmc_version = getField(/\*\s*\*\*BMC Version\*\*:\s*(.+)$/m);
       issue.reproduce_rate = getField(/\*\s*\*\*Reproduce Rate\*\*:\s*(.+)$/m);
       issue.status = getField(/\*\s*\*\*Status\*\*:\s*(.+)$/m) || 'Open';
-      issue.priority = getField(/\*\s*\*\*Priority\*\*:\s*(.+)$/m) || 'P2';
       issue.reproduced_on_ref = getField(/\*\s*\*\*Reproduced on Ref Board\*\*:\s*(.+)$/m) || 'No';
-      issue.current_agesa = getField(/\*\s*\*\*Current AGESA\*\*:\s*(.+)$/m);
+      issue.current_agesa = getField(/\*\s*\*\*Current AGESA\s*\/?\s*Microcode\*\*:\s*(.+)$/m) || getField(/\*\s*\*\*Current AGESA\*\*:\s*(.+)$/m);
 
       const getSection = (name) => {
         const regex = new RegExp(`###\\s+${name}[\\r\\n]+([\\s\\S]*?)(?=[\\r\\n]+###|---|$)`, 'i');
@@ -805,7 +778,7 @@ ${issue.attachments ? issue.attachments.split('\n').filter(Boolean).map(a => `* 
       issue.configuration = getSection('Configuration');
       issue.description = getSection('Description');
       issue.steps = getSection('Steps to Reproduce');
-      issue.rootcause = getSection('Root Cause / Solution / Tags') || getSection('Tags');
+      issue.rootcause = getSection('Root Cause / Debug Notes / Solution') || getSection('Root Cause / Solution / Tags') || getSection('Tags');
 
       return issue;
     },
