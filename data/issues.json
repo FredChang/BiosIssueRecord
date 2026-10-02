@@ -141,7 +141,7 @@
     "id": 7,
     "date": "2026/09/30",
     "steps": "",
-    "title": "[BHS-SP] MRC hangs at 0xB1/0x04 (Set VDD) waiting for Pcode mailbox 0x1080 response.",
+    "title": "MRC hangs at 0xB1/0x04 (Set VDD) waiting for Pcode mailbox 0x1080 response.",
     "status": "Closed",
     "comments": [],
     "issue_id": "0007",
