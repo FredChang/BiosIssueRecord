@@ -272,7 +272,13 @@ document.addEventListener('DOMContentLoaded', () => {
       this.btnSaveFloat?.addEventListener('click', () => this.saveCurrentIssue());
       this.btnCopyMdFloat?.addEventListener('click', () => this.copyCurrentIssueMarkdown());
       this.btnScrollTop?.addEventListener('click', () => {
+        const mainEl = document.querySelector('.main-content');
+        if (mainEl) {
+          mainEl.scrollTo({ top: 0, behavior: 'smooth' });
+        }
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.documentElement.scrollTo({ top: 0, behavior: 'smooth' });
+        document.body.scrollTo({ top: 0, behavior: 'smooth' });
       });
 
       // Global Keyboard Shortcut: Ctrl + S / Cmd + S to save issue
