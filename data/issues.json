@@ -21,6 +21,13 @@
         "author": "元始天尊",
         "date": "2026/10/02 11:30",
         "content": "此問題在 BHS 平台上啟用 VMD 後，注意確認 HSBP EEPROM 燒錄的 LED Pattern 是否符合規範，以避免 OS 下 LED 頻率不一致。"
+      },
+      {
+        "id": "c_1790931056352",
+        "author": "菩提祖師",
+        "date": "2026/10/2 16:50",
+        "content": "哩賀哩賀",
+        "images": []
       }
     ]
   },
