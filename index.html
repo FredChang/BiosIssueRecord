@@ -237,16 +237,19 @@
 
             <!-- Row 9: Attachments -->
             <div class="form-group full-width">
-              <label class="form-label">Attachments (附件與檔案連結)</label>
-              <div class="attachment-box">
-                <ul id="attachment-list" class="attachment-list">
-                  <!-- Attachment items -->
-                </ul>
+              <label class="form-label">Attachments (附件與除錯截圖)</label>
+              <div class="attachment-box" id="attachment-drop-zone">
+                <div class="attachment-drop-hint">
+                  <span>📋 支援直接按 <strong>Ctrl + V</strong> 貼上剪貼簿截圖，或將圖片拖曳至此處</span>
+                </div>
+                <div id="attachment-list" class="attachment-grid">
+                  <!-- Attachment cards rendered dynamically -->
+                </div>
                 <div class="attachment-controls">
                   <input type="text" id="new-attachment-input" class="form-input" placeholder="輸入雲端連結 (URL) 或點右側按鈕上傳截圖..." />
                   <button type="button" class="btn btn-secondary btn-sm" id="btn-add-attachment">加入連結</button>
-                  <button type="button" class="btn btn-outline btn-sm" id="btn-upload-file">📁 上傳圖片/檔案</button>
-                  <input type="file" id="file-attachment-input" style="display:none;" />
+                  <button type="button" class="btn btn-outline btn-sm" id="btn-upload-file">📁 上傳截圖/檔案</button>
+                  <input type="file" id="file-attachment-input" accept="image/*,.log,.txt,.pdf,.zip" style="display:none;" />
                 </div>
               </div>
             </div>
@@ -280,9 +283,18 @@
                   <option value="通天教主">🧙 通天教主</option>
                   <option value="菩提祖師">🧙 菩提祖師</option>
                 </select>
+                <span class="paste-hint">💡 框內按 Ctrl+V 可直接貼上截圖</span>
               </div>
-              <textarea id="comment-input" class="form-textarea comment-input" rows="3" placeholder="在此發表您的除錯觀點、經驗分享或建議..."></textarea>
+              <textarea id="comment-input" class="form-textarea comment-input" rows="3" placeholder="在此發表您的除錯觀點、經驗分享或建議... (支援直接 Ctrl+V 貼上剪貼簿截圖)"></textarea>
+              
+              <!-- Comment Attached Images Preview -->
+              <div class="comment-images-preview" id="comment-images-preview"></div>
+
               <div class="new-comment-actions">
+                <button type="button" class="btn btn-outline btn-sm" id="btn-comment-upload-img" title="附加截圖檔案">
+                  <span>📷 附加圖片</span>
+                </button>
+                <input type="file" id="comment-file-input" accept="image/*" style="display:none;" />
                 <button type="button" class="btn btn-primary btn-sm" id="btn-submit-comment">
                   <span>💬 發表留言</span>
                 </button>
@@ -364,6 +376,23 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline modal-close">關閉</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Lightbox Modal -->
+  <div class="modal" id="image-modal">
+    <div class="modal-content modal-image-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="image-modal-title">🖼️ 截圖預覽</h3>
+        <button class="btn-remove-attachment modal-close">&times;</button>
+      </div>
+      <div class="modal-body modal-image-body">
+        <img id="image-modal-img" src="" alt="Screenshot" />
+      </div>
+      <div class="modal-footer">
+        <a id="image-modal-download" href="#" download="screenshot.png" class="btn btn-secondary btn-sm" target="_blank">⬇️ 下載圖片</a>
+        <button type="button" class="btn btn-primary btn-sm modal-close">關閉</button>
       </div>
     </div>
   </div>

@@ -682,60 +682,195 @@ body {
   gap: 6px;
 }
 
-/* Attachments */
+/* Attachments & Image Paste */
 .attachment-box {
   background-color: var(--bg-surface-secondary);
-  border: 1px solid var(--border-color);
+  border: 2px dashed var(--border-color);
   border-radius: var(--radius-md);
-  padding: 12px;
+  padding: 14px;
+  transition: all 0.2s;
 }
 
-.attachment-list {
-  list-style: none;
+.attachment-box.drag-over {
+  border-color: var(--primary);
+  background-color: var(--primary-light);
+}
+
+.attachment-drop-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  padding: 6px 10px;
+  background-color: rgba(59, 130, 246, 0.08);
+  border-radius: var(--radius-sm);
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 6px;
+}
+
+.attachment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
   margin-bottom: 12px;
 }
 
-.attachment-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
+.attachment-card {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  font-size: 12.5px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  transition: all 0.15s;
 }
 
-.attachment-info {
-  flex: 1;
+.attachment-card:hover {
+  border-color: var(--primary-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.attachment-thumb-wrap {
+  width: 100%;
+  height: 100px;
+  background-color: var(--bg-surface-secondary);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-in;
+}
+
+.attachment-thumb-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;
+  transition: transform 0.2s;
+}
+
+.attachment-thumb-wrap:hover .attachment-thumb-img {
+  transform: scale(1.05);
+}
+
+.attachment-file-icon {
+  font-size: 32px;
+}
+
+.attachment-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.attachment-card-name {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.attachment-link {
-  color: var(--primary);
-  text-decoration: none;
-}
-.attachment-link:hover {
-  text-decoration: underline;
-}
-
-.btn-remove-attachment {
-  background: none;
-  border: none;
-  color: var(--danger);
-  font-size: 16px;
-  cursor: pointer;
-  padding: 0 4px;
+  flex: 1;
 }
 
 .attachment-controls {
   display: flex;
   gap: 8px;
+}
+
+.paste-hint {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+/* Comment Attached Images */
+.comment-images-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.comment-img-chip {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.comment-img-chip img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.comment-img-chip-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  color: #ffffff;
+  border: none;
+  font-size: 12px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.comment-embedded-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.comment-img-thumb {
+  max-width: 220px;
+  max-height: 140px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  cursor: zoom-in;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.comment-img-thumb:hover {
+  transform: scale(1.02);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
+}
+
+/* Modal Image Lightbox */
+.modal-image-content {
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.modal-image-body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  background-color: rgba(0, 0, 0, 0.05);
+  overflow: auto;
+}
+
+.modal-image-body img {
+  max-width: 100%;
+  max-height: 75vh;
+  border-radius: 4px;
+  box-shadow: var(--shadow-lg);
+  object-fit: contain;
 }
 
 /* Jira-style Comments & Discussions Section */

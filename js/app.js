@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
       this.txtSteps = document.getElementById('issue-steps');
       this.txtRootcause = document.getElementById('issue-rootcause');
       this.attachmentListEl = document.getElementById('attachment-list');
+      this.attachmentDropZone = document.getElementById('attachment-drop-zone');
       this.txtNewAttachment = document.getElementById('new-attachment-input');
       this.fileAttachmentInput = document.getElementById('file-attachment-input');
 
@@ -69,6 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
       this.cmbCommentAuthor = document.getElementById('comment-author');
       this.txtCommentInput = document.getElementById('comment-input');
       this.btnSubmitComment = document.getElementById('btn-submit-comment');
+      this.btnCommentUploadImg = document.getElementById('btn-comment-upload-img');
+      this.commentFileInput = document.getElementById('comment-file-input');
+      this.commentImagesPreviewEl = document.getElementById('comment-images-preview');
 
       // Search & Filters
       this.txtSearch = document.getElementById('search-input');
@@ -84,9 +88,14 @@ document.addEventListener('DOMContentLoaded', () => {
       // Modals
       this.settingsModal = document.getElementById('settings-modal');
       this.importExportModal = document.getElementById('import-export-modal');
+      this.imageModal = document.getElementById('image-modal');
+      this.imageModalImg = document.getElementById('image-modal-img');
+      this.imageModalTitle = document.getElementById('image-modal-title');
+      this.imageModalDownload = document.getElementById('image-modal-download');
 
-      // Attachments state
+      // Attachments & Comments state
       this.currentAttachments = [];
+      this.pendingCommentImages = [];
     },
 
     bindEvents() {
@@ -107,6 +116,33 @@ document.addEventListener('DOMContentLoaded', () => {
           this.addComment();
         }
       });
+
+      // Global Clipboard Paste (Ctrl + V for screenshots)
+      document.addEventListener('paste', (e) => this.handleGlobalPaste(e));
+
+      // Drag and drop for attachments
+      if (this.attachmentDropZone) {
+        this.attachmentDropZone.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          this.attachmentDropZone.classList.add('drag-over');
+        });
+        this.attachmentDropZone.addEventListener('dragleave', () => {
+          this.attachmentDropZone.classList.remove('drag-over');
+        });
+        this.attachmentDropZone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          this.attachmentDropZone.classList.remove('drag-over');
+          if (e.dataTransfer && e.dataTransfer.files) {
+            this.handleFilesList(e.dataTransfer.files);
+          }
+        });
+      }
+
+      // Comment file attachment button
+      if (this.btnCommentUploadImg && this.commentFileInput) {
+        this.btnCommentUploadImg.addEventListener('click', () => this.commentFileInput.click());
+        this.commentFileInput.addEventListener('change', (e) => this.handleCommentImageUpload(e));
+      }
 
       // Search & Filter Events
       this.txtSearch.addEventListener('input', () => this.renderIssueList());
@@ -578,39 +614,184 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     },
 
+    // Image Compression Helper
+    compressImage(fileOrBlob, maxWidth = 1280, quality = 0.82) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            let width = img.width;
+            let height = img.height;
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            const dataUrl = canvas.toDataURL('image/jpeg', quality);
+            resolve(dataUrl);
+          };
+          img.onerror = () => resolve(e.target.result);
+          img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(fileOrBlob);
+      });
+    },
+
+    // Global Paste (Ctrl+V) handler
+    async handleGlobalPaste(e) {
+      if (!e.clipboardData || !e.clipboardData.items) return;
+      const items = e.clipboardData.items;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          e.preventDefault();
+          const file = items[i].getAsFile();
+          if (!file) continue;
+
+          this.showToast('正在處理剪貼簿截圖...', 'info');
+          try {
+            const compressed = await this.compressImage(file);
+            
+            // Check if user is typing inside the comment box
+            const activeEl = document.activeElement;
+            if (activeEl === this.txtCommentInput) {
+              this.pendingCommentImages.push(compressed);
+              this.renderPendingCommentImages();
+              this.showToast('已將截圖附加至留言！', 'success');
+            } else {
+              // Add to main issue attachments
+              this.currentAttachments.push(compressed);
+              this.renderAttachmentList();
+              this.showToast('已將剪貼簿截圖加入 Issue 附件！', 'success');
+            }
+          } catch (err) {
+            console.error('Image paste failed:', err);
+            this.showToast('截圖處理失敗：' + err, 'error');
+          }
+          break;
+        }
+      }
+    },
+
+    // Handle File Drop / Selection
+    async handleFilesList(files) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.type.startsWith('image/')) {
+          try {
+            const compressed = await this.compressImage(file);
+            this.currentAttachments.push(compressed);
+            this.showToast(`已新增截圖附件：${file.name}`, 'success');
+          } catch (e) {
+            this.currentAttachments.push(file.name);
+          }
+        } else {
+          this.currentAttachments.push(file.name);
+          this.showToast(`已新增檔案：${file.name}`, 'info');
+        }
+      }
+      this.renderAttachmentList();
+    },
+
+    // Comment image upload
+    async handleCommentImageUpload(e) {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.type.startsWith('image/')) {
+          const compressed = await this.compressImage(file);
+          this.pendingCommentImages.push(compressed);
+        }
+      }
+      this.renderPendingCommentImages();
+      this.commentFileInput.value = '';
+    },
+
+    renderPendingCommentImages() {
+      if (!this.commentImagesPreviewEl) return;
+      this.commentImagesPreviewEl.innerHTML = '';
+      this.pendingCommentImages.forEach((imgSrc, idx) => {
+        const chip = document.createElement('div');
+        chip.className = 'comment-img-chip';
+        chip.innerHTML = `
+          <img src="${imgSrc}" alt="Attached image" />
+          <button type="button" class="comment-img-chip-remove" title="移除此圖片">&times;</button>
+        `;
+        chip.querySelector('.comment-img-chip-remove').addEventListener('click', () => {
+          this.pendingCommentImages.splice(idx, 1);
+          this.renderPendingCommentImages();
+        });
+        this.commentImagesPreviewEl.appendChild(chip);
+      });
+    },
+
+    openImageModal(src, title = '截圖預覽') {
+      if (!this.imageModal) return;
+      this.imageModalImg.src = src;
+      this.imageModalTitle.textContent = title;
+      this.imageModalDownload.href = src;
+      this.openModal(this.imageModal);
+    },
+
     // Attachments Handling
     renderAttachmentList() {
       this.attachmentListEl.innerHTML = '';
       if (this.currentAttachments.length === 0) {
-        this.attachmentListEl.innerHTML = '<li class="empty-attachment">尚無附件 (可輸入雲端網址或上傳截圖)</li>';
+        this.attachmentListEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:12.5px;padding:12px;">尚無附件或截圖 (可直接 Ctrl+V 貼上剪貼簿截圖，或點擊下方按鈕上傳)</div>';
         return;
       }
 
       this.currentAttachments.forEach((att, idx) => {
-        const li = document.createElement('li');
-        li.className = 'attachment-item';
-        const isUrl = /^https?:\/\//i.test(att) || att.startsWith('data:');
-        const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(att) || att.startsWith('data:image/');
+        const card = document.createElement('div');
+        card.className = 'attachment-card';
+        const isBase64Image = att.startsWith('data:image/');
+        const isUrl = /^https?:\/\//i.test(att);
+        const isImageUrl = isUrl && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(att);
 
-        li.innerHTML = `
-          <div class="attachment-icon">${isImage ? '🖼️' : '📎'}</div>
-          <div class="attachment-info">
-            ${isUrl ? `<a href="${att}" target="_blank" class="attachment-link" rel="noopener">${this.escapeHtml(this.getAttachmentDisplayName(att))}</a>` : `<span class="attachment-name">${this.escapeHtml(att)}</span>`}
-          </div>
-          <button type="button" class="btn-remove-attachment" title="移除附件">&times;</button>
-        `;
+        if (isBase64Image || isImageUrl) {
+          card.innerHTML = `
+            <div class="attachment-thumb-wrap" title="點擊放大檢視截圖">
+              <img src="${att}" class="attachment-thumb-img" alt="Screenshot" />
+            </div>
+            <div class="attachment-card-footer">
+              <span class="attachment-card-name">🖼️ ${isBase64Image ? `截圖 #${idx + 1}` : this.escapeHtml(this.getAttachmentDisplayName(att))}</span>
+              <button type="button" class="btn-remove-attachment" title="移除此附件">&times;</button>
+            </div>
+          `;
+          card.querySelector('.attachment-thumb-wrap').addEventListener('click', () => {
+            this.openImageModal(att, `Issue #${this.txtIssueId.value || ''} 附件截圖`);
+          });
+        } else {
+          card.innerHTML = `
+            <div class="attachment-thumb-wrap" style="cursor:default;">
+              <span class="attachment-file-icon">📄</span>
+            </div>
+            <div class="attachment-card-footer">
+              ${isUrl ? `<a href="${att}" target="_blank" class="attachment-link attachment-card-name" rel="noopener">${this.escapeHtml(this.getAttachmentDisplayName(att))}</a>` : `<span class="attachment-card-name" title="${this.escapeHtml(att)}">${this.escapeHtml(this.getAttachmentDisplayName(att))}</span>`}
+              <button type="button" class="btn-remove-attachment" title="移除此附件">&times;</button>
+            </div>
+          `;
+        }
 
-        li.querySelector('.btn-remove-attachment').addEventListener('click', () => {
+        card.querySelector('.btn-remove-attachment').addEventListener('click', (e) => {
+          e.stopPropagation();
           this.currentAttachments.splice(idx, 1);
           this.renderAttachmentList();
         });
 
-        this.attachmentListEl.appendChild(li);
+        this.attachmentListEl.appendChild(card);
       });
     },
 
     getAttachmentDisplayName(path) {
-      if (path.startsWith('data:image/')) return '圖片附件 (截圖)';
+      if (path.startsWith('data:image/')) return '截圖附件';
       const parts = path.split(/[/\\]/);
       return parts[parts.length - 1] || path;
     },
@@ -624,27 +805,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     },
 
-    handleFileUpload(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      if (file.size > 2 * 1024 * 1024) {
-        alert('為確保 GitHub 同步效能，直接嵌入的單一附件大小請勿超過 2MB。');
-      }
-
-      const reader = new FileReader();
-      if (file.type.startsWith('image/')) {
-        reader.onload = (ev) => {
-          this.currentAttachments.push(ev.target.result);
-          this.renderAttachmentList();
-          this.showToast(`已新增截圖附件：${file.name}`, 'success');
-        };
-        reader.readAsDataURL(file);
-      } else {
-        this.currentAttachments.push(file.name);
-        this.renderAttachmentList();
-        this.showToast(`已新增檔案名稱：${file.name}`, 'info');
-      }
+    async handleFileUpload(e) {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
+      await this.handleFilesList(files);
       this.fileAttachmentInput.value = '';
     },
 
@@ -678,6 +842,14 @@ document.addEventListener('DOMContentLoaded', () => {
       comments.forEach((comment, idx) => {
         const item = document.createElement('div');
         item.className = 'comment-item';
+
+        let imagesHtml = '';
+        if (Array.isArray(comment.images) && comment.images.length > 0) {
+          imagesHtml = `<div class="comment-embedded-images">` +
+            comment.images.map((imgSrc, imgIdx) => `<img src="${imgSrc}" class="comment-img-thumb" data-idx="${imgIdx}" alt="Attached screenshot" title="點擊放大檢視截圖" />`).join('') +
+            `</div>`;
+        }
+
         item.innerHTML = `
           <div class="comment-header">
             <div class="comment-author-info">
@@ -687,10 +859,17 @@ document.addEventListener('DOMContentLoaded', () => {
             <button type="button" class="btn-delete-comment" title="刪除此留言">&times; 刪除</button>
           </div>
           <div class="comment-body">${this.escapeHtml(comment.content || '')}</div>
+          ${imagesHtml}
         `;
 
         item.querySelector('.btn-delete-comment').addEventListener('click', () => {
           this.deleteComment(comment.id || idx);
+        });
+
+        item.querySelectorAll('.comment-img-thumb').forEach(thumb => {
+          thumb.addEventListener('click', () => {
+            this.openImageModal(thumb.src, `🧙 ${comment.author} 的留言截圖`);
+          });
         });
 
         this.commentsListEl.appendChild(item);
@@ -704,8 +883,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const content = (this.txtCommentInput.value || '').trim();
-      if (!content) {
-        this.showToast('請輸入留言內容', 'warning');
+      const hasImages = Array.isArray(this.pendingCommentImages) && this.pendingCommentImages.length > 0;
+
+      if (!content && !hasImages) {
+        this.showToast('請輸入留言內容或附加截圖', 'warning');
         this.txtCommentInput.focus();
         return;
       }
@@ -718,8 +899,12 @@ document.addEventListener('DOMContentLoaded', () => {
         id: 'c_' + Date.now(),
         author,
         date: dateStr,
-        content
+        content: content || '(截圖分享)',
+        images: [...this.pendingCommentImages]
       };
+
+      this.pendingCommentImages = [];
+      this.renderPendingCommentImages();
 
       if (!Array.isArray(this.currentIssue.comments)) {
         this.currentIssue.comments = [];
