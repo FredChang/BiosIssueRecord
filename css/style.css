@@ -259,7 +259,13 @@ body {
 .sidebar-top-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+}
+
+.sidebar-title-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
 .sidebar-title {
@@ -268,6 +274,44 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.sidebar-stats-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stat-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-open {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+[data-theme="dark"] .stat-open {
+  background-color: #7f1d1d;
+  color: #fca5a5;
+  border-color: #991b1b;
+}
+
+.stat-closed {
+  background-color: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+[data-theme="dark"] .stat-closed {
+  background-color: #064e3b;
+  color: #86efac;
+  border-color: #065f46;
 }
 
 .badge-count {

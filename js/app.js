@@ -24,6 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
       // Containers & Lists
       this.issueListEl = document.getElementById('issue-list');
       this.issueCountEl = document.getElementById('issue-count');
+      this.statOpenBadge = document.getElementById('stat-open-badge');
+      this.statClosedBadge = document.getElementById('stat-closed-badge');
       this.cloudStatusBadge = document.getElementById('cloud-status');
       
       // Form fields
@@ -225,9 +227,19 @@ document.addEventListener('DOMContentLoaded', () => {
       const statusFilter = this.filterStatus.value;
       const reporterFilter = this.filterReporter.value;
 
+      // Calculate total statistics across all issues
+      const totalOpen = this.issues.filter(i => (i.status || '').toLowerCase() === 'open').length;
+      const totalClosed = this.issues.filter(i => (i.status || '').toLowerCase() !== 'open').length;
+      if (this.statOpenBadge) this.statOpenBadge.textContent = `🔴 Open: ${totalOpen}`;
+      if (this.statClosedBadge) this.statClosedBadge.textContent = `🟢 Closed: ${totalClosed}`;
+
       const filtered = this.issues.filter(issue => {
         if (platformFilter && issue.platform !== platformFilter) return false;
-        if (statusFilter && issue.status !== statusFilter) return false;
+        if (statusFilter) {
+          const isOpen = (issue.status || '').toLowerCase() === 'open';
+          if (statusFilter === 'Open' && !isOpen) return false;
+          if (statusFilter === 'Closed' && isOpen) return false;
+        }
         if (reporterFilter && issue.reporter !== reporterFilter) return false;
 
         if (keyword) {
@@ -268,13 +280,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const item = document.createElement('div');
         item.className = `issue-item ${this.currentIssue && (this.currentIssue.id === issue.id || this.currentIssue.issue_id === issue.issue_id) ? 'active' : ''}`;
         
-        const statusClass = `badge-status-${(issue.status || 'Open').toLowerCase().replace(/\s+/g, '-')}`;
+        const isOpen = (issue.status || '').toLowerCase() === 'open';
+        const statusText = isOpen ? 'Open' : 'Closed';
+        const statusBadgeClass = isOpen ? 'badge-status-open' : 'badge-status-resolved';
 
         item.innerHTML = `
           <div class="issue-item-header">
             <span class="issue-item-id">#${this.escapeHtml(issue.issue_id || String(issue.id))}</span>
             <div class="issue-item-badges">
-              <span class="badge ${statusClass}">${this.escapeHtml(issue.status || 'Open')}</span>
+              <span class="badge ${statusBadgeClass}">${isOpen ? '🔴 Open' : '🟢 Closed'}</span>
             </div>
           </div>
           <div class="issue-item-title" title="${this.escapeHtml(issue.title || '')}">${this.escapeHtml(issue.title || '(未命名問題)')}</div>

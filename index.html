@@ -42,9 +42,15 @@
     <aside class="sidebar">
       <div class="sidebar-header">
         <div class="sidebar-top-row">
-          <div class="sidebar-title">
-            <span>經驗分享清單</span>
-            <span class="badge-count" id="issue-count">0 / 0</span>
+          <div class="sidebar-title-container">
+            <div class="sidebar-title">
+              <span>經驗分享清單</span>
+              <span class="badge-count" id="issue-count">0 / 0</span>
+            </div>
+            <div class="sidebar-stats-pill" id="sidebar-stats">
+              <span class="stat-badge stat-open" id="stat-open-badge">🔴 Open: 0</span>
+              <span class="stat-badge stat-closed" id="stat-closed-badge">🟢 Closed: 0</span>
+            </div>
           </div>
           <button class="btn btn-xs btn-outline" id="btn-clear-filter" title="重設搜尋與篩選">重設篩選</button>
         </div>
@@ -60,11 +66,8 @@
           </select>
           <select id="filter-status" class="filter-select">
             <option value="">所有狀態 (All Status)</option>
-            <option value="Open">Open</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Verified">Verified</option>
-            <option value="Resolved">Resolved</option>
-            <option value="Closed">Closed</option>
+            <option value="Open">🔴 Open (待解決)</option>
+            <option value="Closed">🟢 Closed (已結案)</option>
           </select>
         </div>
         <div class="filter-grid">
@@ -180,11 +183,8 @@
               <div class="form-group">
                 <label class="form-label" for="issue-status">Status (狀態)</label>
                 <select id="issue-status" class="form-select">
-                  <option value="Open">Open (待解決)</option>
-                  <option value="In Progress">In Progress (處理中)</option>
-                  <option value="Verified">Verified (已驗證)</option>
-                  <option value="Resolved">Resolved (已解決)</option>
-                  <option value="Closed">Closed (結案)</option>
+                  <option value="Open">🔴 Open (待解決/討論中)</option>
+                  <option value="Closed">🟢 Closed (已結案/已解決)</option>
                 </select>
               </div>
               <div class="form-group">
