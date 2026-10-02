@@ -475,7 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
         case '道德天尊':
           return { name: '道德天尊', icon: '☯️', title: '太清道尊', class: 'avatar-daode' };
         case '太上老君':
-          return { name: '太上老君', icon: '🍶', title: '金仙道長', class: 'avatar-laojun' };
+          return { name: '太上老君', icon: '🪶', title: '手執拂塵', class: 'avatar-laojun' };
         case '通天教主':
           return { name: '通天教主', icon: '⚔️', title: '碧遊教主', class: 'avatar-tongtian' };
         case '菩提祖師':
