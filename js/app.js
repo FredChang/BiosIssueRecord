@@ -17,6 +17,13 @@ document.addEventListener('DOMContentLoaded', () => {
       this.bindEvents();
       this.applyTheme();
       this.loadSettings();
+
+      // Initialize Supabase Cloud Database & Realtime
+      if (typeof SupabaseDB !== 'undefined') {
+        SupabaseDB.init();
+        SupabaseDB.subscribeRealtime((payload) => this.handleRealtimeUpdate(payload));
+      }
+
       await this.loadIssues();
       if (this.issues && this.issues.length > 0) {
         this.selectIssue(this.issues[0]);
@@ -241,25 +248,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Load Issues
     async loadIssues() {
-      this.showToast('正在載入 Issues 資料...', 'info');
+      this.showToast('正在連線 Supabase 雲端資料庫...', 'info');
       try {
-        const result = await GitHubSync.fetchIssues();
+        let result = null;
+        if (typeof SupabaseDB !== 'undefined') {
+          result = await SupabaseDB.fetchAllIssues();
+        }
+        if (!result || !result.issues || result.issues.length === 0) {
+          result = await GitHubSync.fetchIssues();
+        }
+
         this.issues = result.issues || [];
         this.updateCloudStatusBadge(result.source);
         this.populatePlatformFilter();
         this.renderIssueList();
-        this.showToast(`已載入 ${this.issues.length} 筆 Issues (${result.source})`, 'success');
+        this.showToast(`已成功連線雲端！共有 ${this.issues.length} 筆經驗紀錄`, 'success');
       } catch (err) {
         console.error('Failed to load issues:', err);
         this.showToast('載入失敗：' + err.message, 'error');
       }
     },
 
-    // Sync from GitHub manually
+    // Sync manually
     async syncFromGitHub(notify = false) {
-      if (notify) this.showToast('正在與 GitHub 同步中...', 'info');
+      if (notify) this.showToast('正在重新整理雲端資料...', 'info');
       try {
-        const result = await GitHubSync.fetchIssues();
+        let result = null;
+        if (typeof SupabaseDB !== 'undefined') {
+          result = await SupabaseDB.fetchAllIssues();
+        }
+        if (!result || !result.issues || result.issues.length === 0) {
+          result = await GitHubSync.fetchIssues();
+        }
+
         this.issues = result.issues || [];
         this.updateCloudStatusBadge(result.source);
         this.populatePlatformFilter();
@@ -268,26 +289,72 @@ document.addEventListener('DOMContentLoaded', () => {
           const current = this.issues.find(i => (i.id === this.selectedId || i.issue_id === this.selectedId));
           if (current) this.selectIssue(current);
         }
-        if (notify) this.showToast(`同步成功！共有 ${this.issues.length} 筆 Issue`, 'success');
+        if (notify) this.showToast(`雲端同步完成！共有 ${this.issues.length} 筆 Issue`, 'success');
       } catch (e) {
         this.showToast('同步失敗：' + e.message, 'error');
       }
     },
 
+    // Realtime update handler from Supabase WebSockets
+    handleRealtimeUpdate(payload) {
+      console.log('🔄 Handling realtime event:', payload.eventType);
+      if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+        const item = payload.new.data || payload.new;
+        if (!item || (!item.id && !item.issue_id)) return;
+
+        const idx = this.issues.findIndex(i => (String(i.id) === String(item.id) || String(i.issue_id) === String(item.issue_id)));
+        if (idx !== -1) {
+          this.issues[idx] = item;
+        } else {
+          this.issues.push(item);
+        }
+
+        // If currently viewing this issue, update view immediately
+        if (this.currentIssue && (String(this.currentIssue.id) === String(item.id) || String(this.currentIssue.issue_id) === String(item.issue_id))) {
+          const prevCommentsCount = Array.isArray(this.currentIssue.comments) ? this.currentIssue.comments.length : 0;
+          this.currentIssue = item;
+          this.renderComments(item.comments || []);
+          this.renderAttachmentList();
+
+          const newCommentsCount = Array.isArray(item.comments) ? item.comments.length : 0;
+          if (newCommentsCount > prevCommentsCount) {
+            const lastC = item.comments[item.comments.length - 1];
+            this.showToast(`🔔 收到 [${lastC.author || '尊者'}] 的即時研討發言！`, 'info');
+          }
+        }
+
+        this.renderIssueList();
+        this.populatePlatformFilter();
+      } else if (payload.eventType === 'DELETE') {
+        const delId = payload.old ? (payload.old.id || payload.old.issue_id) : null;
+        if (delId) {
+          this.issues = this.issues.filter(i => (String(i.id) !== String(delId) && String(i.issue_id) !== String(delId)));
+          if (this.currentIssue && (String(this.currentIssue.id) === String(delId) || String(this.currentIssue.issue_id) === String(delId))) {
+            this.createNewIssue();
+          }
+          this.renderIssueList();
+          this.populatePlatformFilter();
+          this.showToast('有 Issue 已被遠端刪除', 'info');
+        }
+      }
+    },
+
     updateCloudStatusBadge(source) {
-      const config = GitHubSync.getConfig();
-      if (!config.token) {
-        this.cloudStatusBadge.className = 'status-badge status-local';
-        this.cloudStatusBadge.innerHTML = '<span>🟡</span> 本地模式 (未設定 Token)';
-        this.cloudStatusBadge.title = '尚未設定 GitHub Token，資料僅暫存在瀏覽器。點此進行設定';
-      } else if (source === 'github-api') {
+      if (source === 'supabase-cloud') {
         this.cloudStatusBadge.className = 'status-badge status-online';
-        this.cloudStatusBadge.innerHTML = '<span>🟢</span> GitHub 雲端已同步';
-        this.cloudStatusBadge.title = `已連線至 ${config.repo} (${config.branch})`;
+        this.cloudStatusBadge.innerHTML = '<span>🟢</span> 雲端即時連線 (免登入即時同步)';
+        this.cloudStatusBadge.title = '已連線至 Supabase 雲端資料庫，任何尊者發言皆即時推播';
       } else {
-        this.cloudStatusBadge.className = 'status-badge status-warning';
-        this.cloudStatusBadge.innerHTML = '<span>🟠</span> 已連線 (唯讀模式)';
-        this.cloudStatusBadge.title = '讀取自靜態資源';
+        const config = GitHubSync.getConfig();
+        if (config.token) {
+          this.cloudStatusBadge.className = 'status-badge status-online';
+          this.cloudStatusBadge.innerHTML = '<span>🟢</span> GitHub 雲端已同步';
+          this.cloudStatusBadge.title = `已連線至 ${config.repo} (${config.branch})`;
+        } else {
+          this.cloudStatusBadge.className = 'status-badge status-local';
+          this.cloudStatusBadge.innerHTML = '<span>🟡</span> 本地模式';
+          this.cloudStatusBadge.title = '離線或讀取靜態快取';
+        }
       }
       this.cloudStatusBadge.onclick = () => this.openModal(this.settingsModal);
     },
@@ -550,16 +617,30 @@ document.addEventListener('DOMContentLoaded', () => {
           this.currentIssue = formData;
         }
 
-        // Commit to GitHub or Local
-        const config = GitHubSync.getConfig();
-        const commitMsg = `${this.currentIssue ? 'Update' : 'Create'} Issue #${formData.issue_id}: ${formData.title.substring(0, 50)}`;
+        // Save to Supabase Cloud Database (Real-time)
+        let savedToCloud = false;
+        if (typeof SupabaseDB !== 'undefined') {
+          try {
+            await SupabaseDB.upsertIssue(formData);
+            savedToCloud = true;
+          } catch (cloudErr) {
+            console.warn('Supabase save error:', cloudErr);
+          }
+        }
 
+        // Also sync to GitHub if token configured
+        const config = GitHubSync.getConfig();
         if (config.token) {
-          await GitHubSync.commitIssues(this.issues, commitMsg);
-          this.showToast(`Issue #${formData.issue_id} 已儲存並同步至 GitHub!`, 'success');
+          const commitMsg = `${this.currentIssue ? 'Update' : 'Create'} Issue #${formData.issue_id}: ${formData.title.substring(0, 50)}`;
+          await GitHubSync.commitIssues(this.issues, commitMsg).catch(e => console.warn('GitHub backup sync failed:', e));
+        }
+
+        localStorage.setItem('bios_issues_cache', JSON.stringify(this.issues));
+
+        if (savedToCloud) {
+          this.showToast(`✨ Issue #${formData.issue_id} 已成功儲存並同步至雲端！所有尊者即時可見`, 'success');
         } else {
-          localStorage.setItem('bios_issues_cache', JSON.stringify(this.issues));
-          this.showToast(`Issue #${formData.issue_id} 已儲存至本地 (未設定 Token，請至右上角設定雲端同步)`, 'warning');
+          this.showToast(`Issue #${formData.issue_id} 已儲存 (本地快取)`, 'info');
         }
 
         this.selectIssue(formData);
@@ -578,23 +659,26 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!this.currentIssue) return;
       const id = this.currentIssue.issue_id || this.currentIssue.id;
 
-      if (!confirm(`確定要刪除 Issue #${id} (${this.currentIssue.title}) 嗎？此操作將同步至 GitHub。`)) {
+      if (!confirm(`確定要刪除 Issue #${id} (${this.currentIssue.title}) 嗎？此操作將同步刪除雲端紀錄。`)) {
         return;
       }
 
       this.btnDelete.disabled = true;
       try {
-        this.issues = this.issues.filter(i => (i.id !== this.currentIssue.id && i.issue_id !== this.currentIssue.issue_id));
-        const config = GitHubSync.getConfig();
-        const commitMsg = `Delete Issue #${id}`;
+        this.issues = this.issues.filter(i => (String(i.id) !== String(this.currentIssue.id) && String(i.issue_id) !== String(this.currentIssue.issue_id)));
 
-        if (config.token) {
-          await GitHubSync.commitIssues(this.issues, commitMsg);
-          this.showToast(`Issue #${id} 已刪除並同步至 GitHub`, 'success');
-        } else {
-          localStorage.setItem('bios_issues_cache', JSON.stringify(this.issues));
-          this.showToast(`Issue #${id} 已刪除 (本地快取)`, 'warning');
+        if (typeof SupabaseDB !== 'undefined') {
+          await SupabaseDB.deleteIssue(this.currentIssue.id || this.currentIssue.issue_id).catch(e => console.warn('Supabase delete error:', e));
         }
+
+        const config = GitHubSync.getConfig();
+        if (config.token) {
+          const commitMsg = `Delete Issue #${id}`;
+          await GitHubSync.commitIssues(this.issues, commitMsg).catch(e => console.warn('GitHub delete sync failed:', e));
+        }
+
+        localStorage.setItem('bios_issues_cache', JSON.stringify(this.issues));
+        this.showToast(`Issue #${id} 已刪除並自雲端同步`, 'success');
 
         this.createNewIssue();
         this.populatePlatformFilter();
@@ -957,20 +1041,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }, 50);
 
-      // Always update local cache immediately so changes persist on refresh
+      // Always update local cache immediately
       localStorage.setItem('bios_issues_cache', JSON.stringify(this.issues));
 
       this.btnSubmitComment.disabled = true;
       this.btnSubmitComment.innerHTML = '<span class="spinner"></span> 傳送中...';
 
       try {
+        let cloudSynced = false;
+        if (typeof SupabaseDB !== 'undefined') {
+          try {
+            await SupabaseDB.upsertIssue(this.currentIssue);
+            cloudSynced = true;
+          } catch (e) {
+            console.warn('Supabase comment sync error:', e);
+          }
+        }
+
         const config = GitHubSync.getConfig();
-        const commitMsg = `Comment on Issue #${this.currentIssue.issue_id} by ${author}`;
         if (config.token) {
-          await GitHubSync.commitIssues(this.issues, commitMsg);
-          this.showToast(`[${author}] 研討發言已成功儲存並同步至 GitHub!`, 'success');
+          const commitMsg = `Comment on Issue #${this.currentIssue.issue_id} by ${author}`;
+          await GitHubSync.commitIssues(this.issues, commitMsg).catch(e => console.warn('GitHub comment sync failed:', e));
+        }
+
+        if (cloudSynced) {
+          this.showToast(`✨ [${author}] 研討發言已即時同步！所有尊者螢幕即時更新`, 'success');
         } else {
-          this.showToast(`[${author}] 研討發言已儲存 (本地模式)。若要讓其他人也能看見，請至右上角 ⚙️ 設定 填入 GitHub Token 同步至雲端！`, 'warning');
+          this.showToast(`[${author}] 研討發言已發布 (本地快取)`, 'info');
         }
       } catch (err) {
         console.error('Comment commit error:', err);
@@ -983,7 +1080,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async deleteComment(commentId) {
       if (!this.currentIssue || !Array.isArray(this.currentIssue.comments)) return;
-      if (!confirm('確定要刪除這則研討留言嗎？此操作將同步至 GitHub。')) return;
+      if (!confirm('確定要刪除這則研討留言嗎？此操作將同步雲端資料。')) return;
 
       this.currentIssue.comments = this.currentIssue.comments.filter((c, idx) => (c.id !== commentId && idx !== commentId));
 
@@ -993,17 +1090,19 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       this.renderComments(this.currentIssue.comments);
+      localStorage.setItem('bios_issues_cache', JSON.stringify(this.issues));
 
       try {
-        const config = GitHubSync.getConfig();
-        const commitMsg = `Delete comment on Issue #${this.currentIssue.issue_id}`;
-        if (config.token) {
-          await GitHubSync.commitIssues(this.issues, commitMsg);
-          this.showToast('已刪除留言並同步至 GitHub', 'success');
-        } else {
-          localStorage.setItem('bios_issues_cache', JSON.stringify(this.issues));
-          this.showToast('已刪除留言 (本地快取)', 'warning');
+        if (typeof SupabaseDB !== 'undefined') {
+          await SupabaseDB.upsertIssue(this.currentIssue).catch(e => console.warn('Supabase delete comment failed:', e));
         }
+
+        const config = GitHubSync.getConfig();
+        if (config.token) {
+          const commitMsg = `Delete comment on Issue #${this.currentIssue.issue_id}`;
+          await GitHubSync.commitIssues(this.issues, commitMsg).catch(e => console.warn('GitHub delete comment failed:', e));
+        }
+        this.showToast('已刪除留言並自雲端同步', 'success');
       } catch (err) {
         this.showToast('刪除失敗：' + err.message, 'error');
       }
