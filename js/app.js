@@ -131,10 +131,33 @@ document.addEventListener('DOMContentLoaded', () => {
       this.imageModalImg = document.getElementById('image-modal-img');
       this.imageModalTitle = document.getElementById('image-modal-title');
       this.imageModalDownload = document.getElementById('image-modal-download');
+      this.btnZoomIn = document.getElementById('btn-zoom-in');
+      this.btnZoomOut = document.getElementById('btn-zoom-out');
+      this.btnZoomReset = document.getElementById('btn-zoom-reset');
+      this.btnZoomFit = document.getElementById('btn-zoom-fit');
+      this.zoomLevelBadge = document.getElementById('zoom-level-badge');
+      this.modalImageBody = document.getElementById('modal-image-body');
+      this.imageZoomViewport = document.getElementById('image-zoom-viewport');
+
+      // Floating Action Bar Elements
+      this.floatingSaveBar = document.getElementById('floating-save-bar');
+      this.floatingIssueTag = document.getElementById('floating-issue-tag');
+      this.floatingIssueTitle = document.getElementById('floating-issue-title-preview');
+      this.btnSaveFloat = document.getElementById('btn-save-float');
+      this.btnCopyMdFloat = document.getElementById('btn-copy-md-float');
+      this.btnScrollTop = document.getElementById('btn-scroll-top');
 
       // Attachments & Comments state
       this.currentAttachments = [];
       this.pendingCommentImages = [];
+
+      // Image Zoom & Pan State
+      this.imageZoom = 1.0;
+      this.imagePanX = 0;
+      this.imagePanY = 0;
+      this.isPanning = false;
+      this.panStartX = 0;
+      this.panStartY = 0;
     },
 
     bindEvents() {
@@ -240,10 +263,72 @@ document.addEventListener('DOMContentLoaded', () => {
         this.txtDate.value = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`;
       });
 
-      // Form change triggers unsaved status
+      // Form change triggers unsaved status and floating bar update
       this.form.addEventListener('input', () => {
         this.updateFormTitle();
       });
+
+      // Floating Action Bar Events
+      this.btnSaveFloat?.addEventListener('click', () => this.saveCurrentIssue());
+      this.btnCopyMdFloat?.addEventListener('click', () => this.copyCurrentIssueMarkdown());
+      this.btnScrollTop?.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      // Global Keyboard Shortcut: Ctrl + S / Cmd + S to save issue
+      document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+          e.preventDefault();
+          this.saveCurrentIssue();
+        }
+      });
+
+      // Image Zoom & Pan Events
+      this.btnZoomIn?.addEventListener('click', () => this.zoomImage(0.25));
+      this.btnZoomOut?.addEventListener('click', () => this.zoomImage(-0.25));
+      this.btnZoomReset?.addEventListener('click', () => this.resetImageZoom(1.0));
+      this.btnZoomFit?.addEventListener('click', () => this.fitImageZoom());
+
+      if (this.modalImageBody) {
+        // Mouse Wheel Zoom
+        this.modalImageBody.addEventListener('wheel', (e) => {
+          e.preventDefault();
+          const delta = e.deltaY < 0 ? 0.2 : -0.2;
+          this.zoomImage(delta);
+        }, { passive: false });
+
+        // Mouse Drag to Pan
+        this.modalImageBody.addEventListener('mousedown', (e) => {
+          if (e.button !== 0) return; // Only left click
+          this.isPanning = true;
+          this.panStartX = e.clientX - this.imagePanX;
+          this.panStartY = e.clientY - this.imagePanY;
+          this.modalImageBody.classList.add('grabbing');
+        });
+
+        window.addEventListener('mousemove', (e) => {
+          if (!this.isPanning) return;
+          this.imagePanX = e.clientX - this.panStartX;
+          this.imagePanY = e.clientY - this.panStartY;
+          this.applyImageTransform();
+        });
+
+        window.addEventListener('mouseup', () => {
+          if (this.isPanning) {
+            this.isPanning = false;
+            this.modalImageBody.classList.remove('grabbing');
+          }
+        });
+
+        // Double Click to Toggle Zoom (100% <-> 200%)
+        this.modalImageBody.addEventListener('dblclick', () => {
+          if (this.imageZoom > 1.2) {
+            this.resetImageZoom(1.0);
+          } else {
+            this.resetImageZoom(2.0);
+          }
+        });
+      }
     },
 
     // Load Issues
@@ -545,11 +630,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateFormTitle() {
       const headerTitle = document.getElementById('form-header-title');
+      const idStr = this.currentIssue ? (this.currentIssue.issue_id || String(this.currentIssue.id)) : (this.txtIssueId.value || 'New');
+      const titleStr = (this.txtTitle.value || '').trim() || (this.currentIssue ? this.currentIssue.title : '(未命名問題)');
+
       if (this.currentIssue) {
-        headerTitle.innerHTML = `編輯經驗紀錄 <span class="badge badge-primary">#${this.escapeHtml(this.currentIssue.issue_id || String(this.currentIssue.id))}</span>`;
+        headerTitle.innerHTML = `編輯經驗紀錄 <span class="badge badge-primary">#${this.escapeHtml(idStr)}</span>`;
       } else {
-        headerTitle.innerHTML = `新增經驗紀錄 <span class="badge badge-outline">#${this.escapeHtml(this.txtIssueId.value || 'New')}</span>`;
+        headerTitle.innerHTML = `新增經驗紀錄 <span class="badge badge-outline">#${this.escapeHtml(idStr)}</span>`;
       }
+
+      if (this.floatingIssueTag) this.floatingIssueTag.textContent = `#${idStr}`;
+      if (this.floatingIssueTitle) this.floatingIssueTitle.textContent = titleStr;
     },
 
     getFormData() {
@@ -848,12 +939,60 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     },
 
-    openImageModal(src, title = '截圖預覽') {
+    openImageModal(src, title = '截圖檢視器') {
       if (!this.imageModal) return;
       this.imageModalImg.src = src;
       this.imageModalTitle.textContent = title;
       this.imageModalDownload.href = src;
+      this.imageModalDownload.setAttribute('download', `screenshot_${Date.now()}.png`);
+      
+      this.resetImageZoom(1.0);
       this.openModal(this.imageModal);
+
+      // Auto calculate best fit once image is loaded
+      this.imageModalImg.onload = () => {
+        this.fitImageZoom();
+      };
+    },
+
+    applyImageTransform() {
+      if (!this.imageModalImg) return;
+      this.imageModalImg.style.transform = `translate(${this.imagePanX}px, ${this.imagePanY}px) scale(${this.imageZoom})`;
+      if (this.zoomLevelBadge) {
+        this.zoomLevelBadge.textContent = `${Math.round(this.imageZoom * 100)}%`;
+      }
+    },
+
+    zoomImage(delta) {
+      const prevZoom = this.imageZoom;
+      let newZoom = Math.round((prevZoom + delta) * 100) / 100;
+      newZoom = Math.max(0.15, Math.min(newZoom, 8.0)); // 15% to 800%
+      this.imageZoom = newZoom;
+      this.applyImageTransform();
+    },
+
+    resetImageZoom(scale = 1.0) {
+      this.imageZoom = scale;
+      this.imagePanX = 0;
+      this.imagePanY = 0;
+      this.applyImageTransform();
+    },
+
+    fitImageZoom() {
+      if (!this.imageModalImg || !this.imageZoomViewport) return;
+      const vpWidth = this.imageZoomViewport.clientWidth || window.innerWidth * 0.85;
+      const vpHeight = this.imageZoomViewport.clientHeight || window.innerHeight * 0.75;
+      const natWidth = this.imageModalImg.naturalWidth || 800;
+      const natHeight = this.imageModalImg.naturalHeight || 600;
+
+      const scaleX = (vpWidth - 40) / natWidth;
+      const scaleY = (vpHeight - 40) / natHeight;
+      const fitScale = Math.min(scaleX, scaleY, 1.0);
+
+      this.imageZoom = Math.max(0.2, Math.round(fitScale * 100) / 100);
+      this.imagePanX = 0;
+      this.imagePanY = 0;
+      this.applyImageTransform();
     },
 
     // Attachments Handling

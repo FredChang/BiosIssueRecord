@@ -303,6 +303,19 @@
           </div>
         </div>
       </div>
+
+      <!-- Floating Quick Save & Action Bar (Visible when scrolling long discussions) -->
+      <div class="floating-save-bar" id="floating-save-bar">
+        <div class="floating-save-info">
+          <span id="floating-issue-tag" class="badge badge-primary">#0001</span>
+          <span id="floating-issue-title-preview" class="floating-title-text">(載入中...)</span>
+        </div>
+        <div class="floating-save-actions">
+          <button type="button" class="btn btn-outline btn-sm" id="btn-scroll-top" title="回到頂部">⬆️ 頂部</button>
+          <button type="button" class="btn btn-outline btn-sm" id="btn-copy-md-float" title="複製 Markdown">📋 複製 MD</button>
+          <button type="button" class="btn btn-primary" id="btn-save-float" title="即時儲存 (快捷鍵 Ctrl+S)">💾 儲存 Issue</button>
+        </div>
+      </div>
     </main>
   </div>
 
@@ -310,12 +323,12 @@
   <div class="modal" id="settings-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title">⚙️ GitHub 雲端儲存與同步設定</h3>
+        <h3 class="modal-title">⚙️ 雲端儲存與備份設定</h3>
         <button class="btn-remove-attachment modal-close">&times;</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label" for="setting-github-repo">GitHub 儲存庫 (Owner/Repo)</label>
+          <label class="form-label" for="setting-github-repo">GitHub 備份儲存庫 (Owner/Repo)</label>
           <input type="text" id="setting-github-repo" class="form-input" value="FredChang/BiosIssueRecord" placeholder="例如：FredChang/BiosIssueRecord" />
         </div>
         <div class="form-group">
@@ -328,18 +341,18 @@
         </div>
         <div class="form-group">
           <label class="form-label" for="setting-github-token">
-            GitHub Personal Access Token (PAT)
-            <a href="https://github.com/settings/tokens/new?scopes=repo&description=BiosIssueRecord-Web-Sync" target="_blank" style="font-size:11px;color:var(--primary);margin-left:6px;" rel="noopener">點此建立 Token (勾選 repo)</a>
+            GitHub Personal Access Token (PAT) [選填，作次要備份使用]
+            <a href="https://github.com/settings/tokens/new?scopes=repo&description=BiosIssueRecord-Web-Sync" target="_blank" style="font-size:11px;color:var(--primary);margin-left:6px;" rel="noopener">點此建立 Token</a>
           </label>
           <input type="password" id="setting-github-token" class="form-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
           <small style="color:var(--text-muted);font-size:11px;margin-top:2px;">
-            Token 將安全儲存於您目前的瀏覽器 (localStorage) 中，直接透過 GitHub REST API 進行寫入與版本記錄。
+            目前已直接連線至 Supabase 即時雲端資料庫，無需輸入 Token 即可直接多人跨公司即時分享！
           </small>
         </div>
         <div id="connection-status-msg" class="status-msg" style="display:none;"></div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" id="btn-test-connection">🔌 測試連線</button>
+        <button type="button" class="btn btn-secondary" id="btn-test-connection">🔌 測試 GitHub 連線</button>
         <button type="button" class="btn btn-outline modal-close">取消</button>
         <button type="button" class="btn btn-primary" id="btn-save-settings">儲存設定</button>
       </div>
@@ -380,17 +393,27 @@
     </div>
   </div>
 
-  <!-- Image Lightbox Modal -->
+  <!-- Image Lightbox Modal with Zoom & Pan Controls -->
   <div class="modal" id="image-modal">
     <div class="modal-content modal-image-content">
       <div class="modal-header">
-        <h3 class="modal-title" id="image-modal-title">🖼️ 截圖預覽</h3>
+        <h3 class="modal-title" id="image-modal-title">🖼️ 截圖檢視器</h3>
+        <div class="modal-image-toolbar">
+          <button type="button" class="btn btn-sm btn-outline" id="btn-zoom-in" title="放大 (+)">🔍 放大 (+)</button>
+          <button type="button" class="btn btn-sm btn-outline" id="btn-zoom-out" title="縮小 (-)">🔎 縮小 (-)</button>
+          <span class="zoom-level-badge" id="zoom-level-badge">100%</span>
+          <button type="button" class="btn btn-sm btn-outline" id="btn-zoom-fit" title="最適畫面">↔️ 適應</button>
+          <button type="button" class="btn btn-sm btn-outline" id="btn-zoom-reset" title="原始大小 100%">🔄 100%</button>
+        </div>
         <button class="btn-remove-attachment modal-close">&times;</button>
       </div>
-      <div class="modal-body modal-image-body">
-        <img id="image-modal-img" src="" alt="Screenshot" />
+      <div class="modal-body modal-image-body" id="modal-image-body">
+        <div class="image-zoom-viewport" id="image-zoom-viewport">
+          <img id="image-modal-img" src="" alt="Screenshot" draggable="false" />
+        </div>
       </div>
       <div class="modal-footer">
+        <span class="modal-image-hint">💡 支援滾輪自由縮放、按住滑鼠左鍵拖曳平移、雙擊快速切換 100%/200%</span>
         <a id="image-modal-download" href="#" download="screenshot.png" class="btn btn-secondary btn-sm" target="_blank">⬇️ 下載圖片</a>
         <button type="button" class="btn btn-primary btn-sm modal-close">關閉</button>
       </div>
@@ -403,9 +426,9 @@
   <!-- Supabase Client SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Scripts -->
-  <script src="js/similarity.js?v=20261002_05"></script>
-  <script src="js/supabase-db.js?v=20261002_05"></script>
-  <script src="js/github-sync.js?v=20261002_05"></script>
-  <script src="js/app.js?v=20261002_05"></script>
+  <script src="js/similarity.js?v=20261002_06"></script>
+  <script src="js/supabase-db.js?v=20261002_06"></script>
+  <script src="js/github-sync.js?v=20261002_06"></script>
+  <script src="js/app.js?v=20261002_06"></script>
 </body>
 </html>
