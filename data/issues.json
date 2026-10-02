@@ -14,7 +14,7 @@
     "description": "When HOTPLUG_SUPPORT is set to 1, the LED blinking is abnormal.",
     "steps": "Boot to OS and observe if the LED behavior during POST and in OS matches expectations. Pairing with error injection provides more comprehensive testing.",
     "rootcause": "1. Confirm the SMBus address of the PCA9544 MUX with hardware team to ensure the path is correct.\n2. Refer to the attachment to enable VMD. After enabling VMD, Hotplug, RST, Error, and LED are all taken over by VMD.\n3. VMD → VMD driver → PCH-less SMBus controller → PCA9544 mux（channel address）→ NVMe backplane / HSBP EEPROM / SES IC → slot signals（LED, presence, etc.）",
-    "attachments": "0001_0001_1.jpg",
+    "attachments": "",
     "comments": [
       {
         "id": "c_sample_1",
