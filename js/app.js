@@ -465,6 +465,26 @@ document.addEventListener('DOMContentLoaded', () => {
       this.filterPlatform.value = currentVal;
     },
 
+    getReporterInfo(name) {
+      const cleanName = (name || '').trim();
+      switch (cleanName) {
+        case '元始天尊':
+          return { name: '元始天尊', icon: '👑', title: '混元道祖', class: 'avatar-yuanshi' };
+        case '靈寶天尊':
+          return { name: '靈寶天尊', icon: '🔮', title: '玉晨道君', class: 'avatar-lingbao' };
+        case '道德天尊':
+          return { name: '道德天尊', icon: '☯️', title: '太清道尊', class: 'avatar-daode' };
+        case '太上老君':
+          return { name: '太上老君', icon: '🍶', title: '金仙道長', class: 'avatar-laojun' };
+        case '通天教主':
+          return { name: '通天教主', icon: '⚔️', title: '碧遊教主', class: 'avatar-tongtian' };
+        case '菩提祖師':
+          return { name: '菩提祖師', icon: '🪷', title: '方寸祖師', class: 'avatar-puti' };
+        default:
+          return { name: cleanName || '元始天尊', icon: '🧙', title: '尊者', class: 'avatar-default' };
+      }
+    },
+
     // Render list based on search/filter
     renderIssueList() {
       const keyword = (this.txtSearch.value || '').toLowerCase().trim();
@@ -528,6 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const isOpen = (issue.status || '').toLowerCase() === 'open';
         const statusText = isOpen ? 'Open' : 'Closed';
         const statusBadgeClass = isOpen ? 'badge-status-open' : 'badge-status-resolved';
+        const reporterInfo = this.getReporterInfo(issue.reporter);
 
         item.innerHTML = `
           <div class="issue-item-header">
@@ -539,7 +560,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="issue-item-title" title="${this.escapeHtml(issue.title || '')}">${this.escapeHtml(issue.title || '(未命名問題)')}</div>
           <div class="issue-item-footer">
             <span class="issue-item-platform">${this.escapeHtml(issue.platform || 'General')}</span>
-            <span class="issue-item-reporter">🧙 ${this.escapeHtml(issue.reporter || '元始天尊')}</span>
+            <span class="issue-item-reporter ${reporterInfo.class}">${reporterInfo.icon} ${this.escapeHtml(reporterInfo.name)}</span>
             <span class="issue-item-date">${this.escapeHtml(issue.date || '')}</span>
           </div>
         `;
@@ -1103,6 +1124,7 @@ document.addEventListener('DOMContentLoaded', () => {
       comments.forEach((comment, idx) => {
         const item = document.createElement('div');
         item.className = 'comment-item';
+        const authorInfo = this.getReporterInfo(comment.author);
 
         let imagesHtml = '';
         if (Array.isArray(comment.images) && comment.images.length > 0) {
@@ -1114,8 +1136,13 @@ document.addEventListener('DOMContentLoaded', () => {
         item.innerHTML = `
           <div class="comment-header">
             <div class="comment-author-info">
-              <span class="comment-author-badge">🧙 ${this.escapeHtml(comment.author || '元始天尊')}</span>
-              <span class="comment-date">${this.escapeHtml(comment.date || '')}</span>
+              <div class="comment-author-avatar ${authorInfo.class}" title="${this.escapeHtml(authorInfo.name)} (${this.escapeHtml(authorInfo.title)})">
+                <span>${authorInfo.icon}</span>
+              </div>
+              <div class="comment-author-details">
+                <span class="comment-author-badge ${authorInfo.class}">${authorInfo.icon} ${this.escapeHtml(authorInfo.name)}</span>
+                <span class="comment-date">${this.escapeHtml(comment.date || '')}</span>
+              </div>
             </div>
             <button type="button" class="btn-delete-comment" title="刪除此留言">&times; 刪除</button>
           </div>
@@ -1129,7 +1156,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         item.querySelectorAll('.comment-img-thumb').forEach(thumb => {
           thumb.addEventListener('click', () => {
-            this.openImageModal(thumb.src, `🧙 ${comment.author} 的留言截圖`);
+            this.openImageModal(thumb.src, `${authorInfo.icon} ${authorInfo.name} 的留言截圖`);
           });
         });
 

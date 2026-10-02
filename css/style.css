@@ -934,21 +934,112 @@ body {
 .comment-author-info {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+}
+
+.comment-author-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--avatar-bg, var(--bg-surface));
+  border: 1.5px solid var(--avatar-border, var(--border-color));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+  flex-shrink: 0;
+}
+
+.comment-author-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .comment-author-badge {
   font-weight: 700;
-  font-size: 13px;
-  color: var(--primary);
-  background-color: var(--primary-light);
-  padding: 2px 8px;
-  border-radius: 6px;
-  border: 1px solid var(--primary-border);
+  font-size: 12px;
+  color: var(--avatar-color, var(--primary));
+  background-color: var(--avatar-bg, var(--primary-light));
+  border: 1px solid var(--avatar-border, var(--primary-border));
+  padding: 1px 8px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+}
+
+/* Unique Celestial Master Themes */
+.avatar-yuanshi {
+  --avatar-bg: #fef3c7;
+  --avatar-color: #b45309;
+  --avatar-border: #fcd34d;
+}
+[data-theme="dark"] .avatar-yuanshi {
+  --avatar-bg: #451a03;
+  --avatar-color: #fde68a;
+  --avatar-border: #92400e;
+}
+
+.avatar-lingbao {
+  --avatar-bg: #d1fae5;
+  --avatar-color: #047857;
+  --avatar-border: #6ee7b7;
+}
+[data-theme="dark"] .avatar-lingbao {
+  --avatar-bg: #064e3b;
+  --avatar-color: #a7f3d0;
+  --avatar-border: #047857;
+}
+
+.avatar-daode {
+  --avatar-bg: #ede9fe;
+  --avatar-color: #6d28d9;
+  --avatar-border: #c4b5fd;
+}
+[data-theme="dark"] .avatar-daode {
+  --avatar-bg: #3b0764;
+  --avatar-color: #ddd6fe;
+  --avatar-border: #6d28d9;
+}
+
+.avatar-laojun {
+  --avatar-bg: #ffedd5;
+  --avatar-color: #c2410c;
+  --avatar-border: #fdba74;
+}
+[data-theme="dark"] .avatar-laojun {
+  --avatar-bg: #431407;
+  --avatar-color: #fed7aa;
+  --avatar-border: #9a3412;
+}
+
+.avatar-tongtian {
+  --avatar-bg: #ffe4e6;
+  --avatar-color: #be123c;
+  --avatar-border: #fda4af;
+}
+[data-theme="dark"] .avatar-tongtian {
+  --avatar-bg: #4c0519;
+  --avatar-color: #fecdd3;
+  --avatar-border: #9f1239;
+}
+
+.avatar-puti {
+  --avatar-bg: #ccfbf1;
+  --avatar-color: #0f766e;
+  --avatar-border: #5eead4;
+}
+[data-theme="dark"] .avatar-puti {
+  --avatar-bg: #134e4a;
+  --avatar-color: #99f6e4;
+  --avatar-border: #115e59;
 }
 
 .comment-date {
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--text-muted);
 }
 
