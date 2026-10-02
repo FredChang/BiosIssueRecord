@@ -740,6 +740,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }, 50);
 
+      // Always update local cache immediately so changes persist on refresh
+      localStorage.setItem('bios_issues_cache', JSON.stringify(this.issues));
+
       this.btnSubmitComment.disabled = true;
       this.btnSubmitComment.innerHTML = '<span class="spinner"></span> 傳送中...';
 
@@ -748,13 +751,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const commitMsg = `Comment on Issue #${this.currentIssue.issue_id} by ${author}`;
         if (config.token) {
           await GitHubSync.commitIssues(this.issues, commitMsg);
-          this.showToast(`[${author}] 研討發言已儲存並同步至 GitHub!`, 'success');
+          this.showToast(`[${author}] 研討發言已成功儲存並同步至 GitHub!`, 'success');
         } else {
-          localStorage.setItem('bios_issues_cache', JSON.stringify(this.issues));
-          this.showToast(`[${author}] 研討發言已暫存 (本地快取)`, 'warning');
+          this.showToast(`[${author}] 研討發言已儲存 (本地模式)。若要讓其他人也能看見，請至右上角 ⚙️ 設定 填入 GitHub Token 同步至雲端！`, 'warning');
         }
       } catch (err) {
-        this.showToast('留言儲存失敗：' + err.message, 'error');
+        console.error('Comment commit error:', err);
+        this.showToast('雲端同步失敗：' + err.message, 'error');
       } finally {
         this.btnSubmitComment.disabled = false;
         this.btnSubmitComment.innerHTML = '<span>💬 發表留言</span>';

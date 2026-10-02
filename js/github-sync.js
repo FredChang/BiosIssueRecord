@@ -70,22 +70,22 @@ const GitHubSync = {
   },
 
   /**
-   * Fetch issues from GitHub API or static file
+   * Fetch issues from GitHub API or static file / cache
    */
   async fetchIssues() {
     const config = this.getConfig();
     let issues = null;
     let sha = null;
 
-    // 1. Try to fetch from GitHub API if repo is configured
-    if (config.repo) {
+    // 1. If Token is present, fetch latest from GitHub REST API
+    if (config.token && config.repo) {
       try {
         const repo = config.repo.replace(/^https?:\/\/github\.com\//, '').replace(/\.git$/, '').trim();
         const url = `https://api.github.com/repos/${repo}/contents/${config.filePath}?ref=${config.branch}&_t=${Date.now()}`;
-        const headers = { 'Accept': 'application/vnd.github.v3+json' };
-        if (config.token) {
-          headers['Authorization'] = `token ${config.token}`;
-        }
+        const headers = {
+          'Accept': 'application/vnd.github.v3+json',
+          'Authorization': `token ${config.token}`
+        };
 
         const res = await fetch(url, { headers });
         if (res.ok) {
@@ -96,32 +96,61 @@ const GitHubSync = {
             const jsonText = this.base64ToUtf8(cleanContent);
             issues = JSON.parse(jsonText);
             sessionStorage.setItem('current_issues_sha', sha);
+            localStorage.setItem('bios_issues_cache', jsonText);
             return { issues, sha, source: 'github-api' };
           }
         }
       } catch (e) {
-        console.warn('GitHub API fetch failed, falling back to static file:', e);
+        console.warn('GitHub API fetch with token failed, falling back to local cache/file:', e);
       }
     }
 
-    // 2. Fallback to local static file (data/issues.json)
-    try {
-      const res = await fetch(`./data/issues.json?_t=${Date.now()}`);
-      if (res.ok) {
-        issues = await res.json();
-        return { issues, sha: null, source: 'local-static' };
-      }
-    } catch (e) {
-      console.warn('Local static fetch failed:', e);
-    }
-
-    // 3. Fallback to localStorage cache
+    // 2. If no Token (local mode), check if we have local unsaved changes in localStorage
     const cached = localStorage.getItem('bios_issues_cache');
     if (cached) {
       try {
         issues = JSON.parse(cached);
-        return { issues, sha: null, source: 'local-storage' };
+        if (Array.isArray(issues) && issues.length > 0) {
+          return { issues, sha: null, source: 'local-storage' };
+        }
       } catch (e) {}
+    }
+
+    // 3. Fallback: Fetch from public GitHub API (read-only)
+    if (config.repo) {
+      try {
+        const repo = config.repo.replace(/^https?:\/\/github\.com\//, '').replace(/\.git$/, '').trim();
+        const url = `https://api.github.com/repos/${repo}/contents/${config.filePath}?ref=${config.branch}&_t=${Date.now()}`;
+        const headers = { 'Accept': 'application/vnd.github.v3+json' };
+
+        const res = await fetch(url, { headers });
+        if (res.ok) {
+          const fileData = await res.json();
+          sha = fileData.sha;
+          if (fileData.content) {
+            const cleanContent = fileData.content.replace(/\n/g, '');
+            const jsonText = this.base64ToUtf8(cleanContent);
+            issues = JSON.parse(jsonText);
+            sessionStorage.setItem('current_issues_sha', sha);
+            localStorage.setItem('bios_issues_cache', jsonText);
+            return { issues, sha, source: 'github-readonly' };
+          }
+        }
+      } catch (e) {
+        console.warn('Public GitHub API fetch failed, falling back to static file:', e);
+      }
+    }
+
+    // 4. Fallback to local static file (data/issues.json)
+    try {
+      const res = await fetch(`./data/issues.json?_t=${Date.now()}`);
+      if (res.ok) {
+        issues = await res.json();
+        localStorage.setItem('bios_issues_cache', JSON.stringify(issues));
+        return { issues, sha: null, source: 'local-static' };
+      }
+    } catch (e) {
+      console.warn('Local static fetch failed:', e);
     }
 
     return { issues: [], sha: null, source: 'empty' };
