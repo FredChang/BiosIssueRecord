@@ -251,6 +251,44 @@
               </div>
             </div>
           </form>
+
+          <!-- Jira-style Discussions / Comments Section -->
+          <div class="comments-section" id="comments-section">
+            <div class="comments-header">
+              <h3 class="comments-title">
+                <span>💬 尊者研討專區 (Activity & Discussions)</span>
+                <span class="badge-count" id="comments-count">0</span>
+              </h3>
+            </div>
+
+            <!-- Comments List -->
+            <div class="comments-list" id="comments-list">
+              <!-- Comments will be rendered dynamically -->
+            </div>
+
+            <!-- New Comment Box -->
+            <div class="new-comment-card" id="new-comment-card">
+              <div class="new-comment-header">
+                <label class="form-label" for="comment-author">
+                  <span>扮演發言尊者：</span>
+                </label>
+                <select id="comment-author" class="form-select comment-author-select">
+                  <option value="元始天尊">🧙 元始天尊</option>
+                  <option value="靈寶天尊">🧙 靈寶天尊</option>
+                  <option value="道德天尊">🧙 道德天尊</option>
+                  <option value="太上老君">🧙 太上老君</option>
+                  <option value="通天教主">🧙 通天教主</option>
+                  <option value="菩提祖師">🧙 菩提祖師</option>
+                </select>
+              </div>
+              <textarea id="comment-input" class="form-textarea comment-input" rows="3" placeholder="在此發表您的除錯觀點、經驗分享或建議..."></textarea>
+              <div class="new-comment-actions">
+                <button type="button" class="btn btn-primary btn-sm" id="btn-submit-comment">
+                  <span>💬 發表留言</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </main>

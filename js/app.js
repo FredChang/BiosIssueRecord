@@ -58,6 +58,14 @@ document.addEventListener('DOMContentLoaded', () => {
       this.btnThemeToggle = document.getElementById('btn-theme-toggle');
       this.btnImportExport = document.getElementById('btn-import-export');
 
+      // Jira-style Discussions & Comments
+      this.commentsSection = document.getElementById('comments-section');
+      this.commentsListEl = document.getElementById('comments-list');
+      this.commentsCountEl = document.getElementById('comments-count');
+      this.cmbCommentAuthor = document.getElementById('comment-author');
+      this.txtCommentInput = document.getElementById('comment-input');
+      this.btnSubmitComment = document.getElementById('btn-submit-comment');
+
       // Search & Filters
       this.txtSearch = document.getElementById('search-input');
       this.filterPlatform = document.getElementById('filter-platform');
@@ -88,6 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
       this.btnSettings.addEventListener('click', () => this.openModal(this.settingsModal));
       this.btnImportExport.addEventListener('click', () => this.openModal(this.importExportModal));
       this.btnThemeToggle.addEventListener('click', () => this.toggleTheme());
+      this.btnSubmitComment.addEventListener('click', () => this.addComment());
 
       // Search & Filter Events
       this.txtSearch.addEventListener('input', () => this.renderIssueList());
@@ -330,6 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
         this.currentAttachments = list;
       }
       this.renderAttachmentList();
+      this.renderComments(issue.comments || []);
 
       this.btnDelete.disabled = false;
       this.btnExportMd.disabled = false;
@@ -379,6 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       this.currentAttachments = [];
       this.renderAttachmentList();
+      this.renderComments([]);
 
       this.btnDelete.disabled = true;
       this.btnExportMd.disabled = true;
@@ -412,7 +423,8 @@ document.addEventListener('DOMContentLoaded', () => {
         description: this.txtDescription.value.trim(),
         steps: this.txtSteps.value.trim(),
         rootcause: this.txtRootcause.value.trim(),
-        attachments: this.currentAttachments.join('\n')
+        attachments: this.currentAttachments.join('\n'),
+        comments: this.currentIssue && Array.isArray(this.currentIssue.comments) ? this.currentIssue.comments : []
       };
     },
 
@@ -626,8 +638,150 @@ document.addEventListener('DOMContentLoaded', () => {
       this.fileAttachmentInput.value = '';
     },
 
+    // Jira-style Comments & Discussions
+    renderComments(comments = []) {
+      if (!this.commentsListEl) return;
+      this.commentsCountEl.textContent = String(comments.length);
+      this.commentsListEl.innerHTML = '';
+
+      if (!this.currentIssue) {
+        this.commentsListEl.innerHTML = `
+          <div class="empty-comments">
+            <span>📝 儲存或選擇一筆 Issue 後，即可於此處展開尊者研討留言。</span>
+          </div>
+        `;
+        if (this.btnSubmitComment) this.btnSubmitComment.disabled = true;
+        return;
+      }
+
+      if (this.btnSubmitComment) this.btnSubmitComment.disabled = false;
+
+      if (comments.length === 0) {
+        this.commentsListEl.innerHTML = `
+          <div class="empty-comments">
+            <span>💬 目前尚無尊者留言，歡迎率先發表您的除錯觀點或經驗！</span>
+          </div>
+        `;
+        return;
+      }
+
+      comments.forEach((comment, idx) => {
+        const item = document.createElement('div');
+        item.className = 'comment-item';
+        item.innerHTML = `
+          <div class="comment-header">
+            <div class="comment-author-info">
+              <span class="comment-author-badge">🧙 ${this.escapeHtml(comment.author || '元始天尊')}</span>
+              <span class="comment-date">${this.escapeHtml(comment.date || '')}</span>
+            </div>
+            <button type="button" class="btn-delete-comment" title="刪除此留言">&times; 刪除</button>
+          </div>
+          <div class="comment-body">${this.escapeHtml(comment.content || '')}</div>
+        `;
+
+        item.querySelector('.btn-delete-comment').addEventListener('click', () => {
+          this.deleteComment(comment.id || idx);
+        });
+
+        this.commentsListEl.appendChild(item);
+      });
+    },
+
+    async addComment() {
+      if (!this.currentIssue) {
+        this.showToast('請先選擇或儲存 Issue 後再發表留言', 'warning');
+        return;
+      }
+
+      const content = (this.txtCommentInput.value || '').trim();
+      if (!content) {
+        this.showToast('請輸入留言內容', 'warning');
+        this.txtCommentInput.focus();
+        return;
+      }
+
+      const author = this.cmbCommentAuthor.value || '元始天尊';
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      const newComment = {
+        id: 'c_' + Date.now(),
+        author,
+        date: dateStr,
+        content
+      };
+
+      if (!Array.isArray(this.currentIssue.comments)) {
+        this.currentIssue.comments = [];
+      }
+      this.currentIssue.comments.push(newComment);
+
+      // Update in issues list
+      const idx = this.issues.findIndex(i => (i.id === this.currentIssue.id || i.issue_id === this.currentIssue.issue_id));
+      if (idx !== -1) {
+        this.issues[idx].comments = this.currentIssue.comments;
+      }
+
+      this.txtCommentInput.value = '';
+      this.renderComments(this.currentIssue.comments);
+
+      this.btnSubmitComment.disabled = true;
+      this.btnSubmitComment.innerHTML = '<span class="spinner"></span> 傳送中...';
+
+      try {
+        const config = GitHubSync.getConfig();
+        const commitMsg = `Comment on Issue #${this.currentIssue.issue_id} by ${author}`;
+        if (config.token) {
+          await GitHubSync.commitIssues(this.issues, commitMsg);
+          this.showToast(`[${author}] 研討發言已儲存並同步至 GitHub!`, 'success');
+        } else {
+          localStorage.setItem('bios_issues_cache', JSON.stringify(this.issues));
+          this.showToast(`[${author}] 研討發言已暫存 (本地快取)`, 'warning');
+        }
+      } catch (err) {
+        this.showToast('留言儲存失敗：' + err.message, 'error');
+      } finally {
+        this.btnSubmitComment.disabled = false;
+        this.btnSubmitComment.innerHTML = '<span>💬 發表留言</span>';
+      }
+    },
+
+    async deleteComment(commentId) {
+      if (!this.currentIssue || !Array.isArray(this.currentIssue.comments)) return;
+      if (!confirm('確定要刪除這則研討留言嗎？此操作將同步至 GitHub。')) return;
+
+      this.currentIssue.comments = this.currentIssue.comments.filter((c, idx) => (c.id !== commentId && idx !== commentId));
+
+      const idx = this.issues.findIndex(i => (i.id === this.currentIssue.id || i.issue_id === this.currentIssue.issue_id));
+      if (idx !== -1) {
+        this.issues[idx].comments = this.currentIssue.comments;
+      }
+
+      this.renderComments(this.currentIssue.comments);
+
+      try {
+        const config = GitHubSync.getConfig();
+        const commitMsg = `Delete comment on Issue #${this.currentIssue.issue_id}`;
+        if (config.token) {
+          await GitHubSync.commitIssues(this.issues, commitMsg);
+          this.showToast('已刪除留言並同步至 GitHub', 'success');
+        } else {
+          localStorage.setItem('bios_issues_cache', JSON.stringify(this.issues));
+          this.showToast('已刪除留言 (本地快取)', 'warning');
+        }
+      } catch (err) {
+        this.showToast('刪除失敗：' + err.message, 'error');
+      }
+    },
+
     // Markdown Generation (Cleaned & Desensitized)
     generateMarkdown(issue) {
+      let commentsMd = '';
+      if (Array.isArray(issue.comments) && issue.comments.length > 0) {
+        commentsMd = `\n### Discussions / Comments (${issue.comments.length})\n` +
+          issue.comments.map(c => `* **[${c.date || ''}] 🧙 ${c.author || '元始天尊'}**:\n  ${(c.content || '').replace(/\n/g, '\n  ')}`).join('\n\n') + '\n';
+      }
+
       return `## Issue #${issue.issue_id || issue.id}: ${issue.title}
 
 * **Date**: ${issue.date || 'N/A'}
@@ -654,7 +808,7 @@ ${issue.rootcause || 'N/A'}
 
 ### Attachments
 ${issue.attachments ? issue.attachments.split('\n').filter(Boolean).map(a => `* ${a}`).join('\n') : 'None'}
-
+${commentsMd}
 ---
 `;
     },
