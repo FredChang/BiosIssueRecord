@@ -805,6 +805,59 @@ body {
   flex: 1;
 }
 
+.attachment-card-clickable {
+  cursor: pointer;
+}
+.attachment-card-clickable:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.attachment-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.btn-att-action {
+  background: none;
+  border: none;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  text-decoration: none;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.btn-att-action:hover {
+  background-color: var(--primary-light);
+  color: var(--primary);
+  transform: scale(1.15);
+}
+
+.attachment-thumb-text {
+  flex-direction: column;
+  gap: 4px;
+}
+
+.attachment-file-type-badge {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: var(--primary);
+}
+
 .attachment-controls {
   display: flex;
   gap: 8px;

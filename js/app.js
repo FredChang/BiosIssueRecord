@@ -140,6 +140,14 @@ document.addEventListener('DOMContentLoaded', () => {
       this.modalImageBody = document.getElementById('modal-image-body');
       this.imageZoomViewport = document.getElementById('image-zoom-viewport');
 
+      // Text / Log File Viewer Modal Elements
+      this.textFileModal = document.getElementById('text-file-modal');
+      this.textFileModalTitle = document.getElementById('text-file-modal-title');
+      this.textFileModalContent = document.getElementById('text-file-modal-content');
+      this.textFileModalInfo = document.getElementById('text-file-modal-info');
+      this.btnCopyFileContent = document.getElementById('btn-copy-file-content');
+      this.btnDownloadFileModal = document.getElementById('btn-download-file-modal');
+
       // Floating Action Bar Elements
       this.floatingSaveBar = document.getElementById('floating-save-bar');
       this.floatingIssueTag = document.getElementById('floating-issue-tag');
@@ -1021,14 +1029,45 @@ document.addEventListener('DOMContentLoaded', () => {
             this.currentAttachments.push(compressed);
             this.showToast(`已新增截圖附件：${file.name}`, 'success');
           } catch (e) {
-            this.currentAttachments.push(file.name);
+            try {
+              const dataUrl = await this.readFileAsDataUrl(file);
+              this.currentAttachments.push(dataUrl);
+              this.showToast(`已新增圖片檔案：${file.name}`, 'success');
+            } catch (err) {
+              this.currentAttachments.push(file.name);
+            }
           }
         } else {
-          this.currentAttachments.push(file.name);
-          this.showToast(`已新增檔案：${file.name}`, 'info');
+          try {
+            const dataUrl = await this.readFileAsDataUrl(file);
+            this.currentAttachments.push(dataUrl);
+            this.showToast(`已新增檔案：${file.name}`, 'success');
+          } catch (err) {
+            console.error('Failed to read file as data url:', err);
+            this.currentAttachments.push(file.name);
+            this.showToast(`讀取檔案失敗：${err.message}`, 'error');
+          }
         }
       }
       this.renderAttachmentList();
+    },
+
+    readFileAsDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          let dataUrl = reader.result;
+          const mime = file.type || 'application/octet-stream';
+          const base64Index = dataUrl.indexOf(';base64,');
+          if (base64Index !== -1) {
+            const base64Data = dataUrl.substring(base64Index + 8);
+            dataUrl = `data:${mime};name=${encodeURIComponent(file.name)};base64,${base64Data}`;
+          }
+          resolve(dataUrl);
+        };
+        reader.onerror = (e) => reject(e);
+        reader.readAsDataURL(file);
+      });
     },
 
     // Comment image upload
@@ -1120,6 +1159,76 @@ document.addEventListener('DOMContentLoaded', () => {
       this.applyImageTransform();
     },
 
+    parseAttachment(att) {
+      if (!att) return { isDataUrl: false, isUrl: false, isImage: false, isText: false, name: '', dataUrl: '', icon: '📄' };
+
+      if (att.startsWith('data:')) {
+        const headerEnd = att.indexOf(',');
+        const header = headerEnd !== -1 ? att.substring(5, headerEnd) : '';
+        let mime = 'application/octet-stream';
+        let name = '';
+
+        const parts = header.split(';');
+        if (parts.length > 0 && !parts[0].includes('=')) {
+          mime = parts[0] || mime;
+        }
+        for (let part of parts) {
+          if (part.startsWith('name=')) {
+            try {
+              name = decodeURIComponent(part.substring(5));
+            } catch (e) {
+              name = part.substring(5);
+            }
+          }
+        }
+
+        const isImage = mime.startsWith('image/');
+        const ext = (name.split('.').pop() || '').toLowerCase();
+        const isText = mime.startsWith('text/') || ['txt', 'log', 'csv', 'json', 'xml', 'c', 'cpp', 'h', 'py', 'sh', 'bat', 'cmd', 'md', 'ini', 'conf', 'cfg'].includes(ext);
+
+        let icon = '📄';
+        if (isImage) icon = '🖼️';
+        else if (['txt', 'log', 'md'].includes(ext)) icon = '📝';
+        else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) icon = '🗜️';
+        else if (['pdf', 'doc', 'docx'].includes(ext)) icon = '📑';
+        else if (['bin', 'rom', 'hex', 'cap', 'fd'].includes(ext)) icon = '💾';
+        else if (['c', 'cpp', 'h', 'py', 'sh', 'js', 'json', 'xml'].includes(ext)) icon = '💻';
+
+        return {
+          isDataUrl: true,
+          mime,
+          name: name || (isImage ? '截圖附件' : '附件檔案'),
+          isImage,
+          isText,
+          icon,
+          dataUrl: att
+        };
+      }
+
+      const isUrl = /^https?:\/\//i.test(att);
+      const parts = att.split(/[/\\]/);
+      const name = parts[parts.length - 1] || att;
+      const ext = (name.split('.').pop() || '').toLowerCase();
+      const isImage = isUrl && ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
+      const isText = ['txt', 'log', 'csv', 'json', 'xml', 'c', 'cpp', 'h', 'py', 'sh', 'md'].includes(ext);
+
+      let icon = '📄';
+      if (isImage) icon = '🖼️';
+      else if (['txt', 'log', 'md'].includes(ext)) icon = '📝';
+      else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) icon = '🗜️';
+      else if (['bin', 'rom', 'hex', 'cap', 'fd'].includes(ext)) icon = '💾';
+
+      return {
+        isDataUrl: false,
+        isUrl,
+        name,
+        isImage,
+        isText,
+        icon,
+        dataUrl: att
+      };
+    },
+
     // Attachments Handling
     renderAttachmentList() {
       this.attachmentListEl.innerHTML = '';
@@ -1129,33 +1238,86 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       this.currentAttachments.forEach((att, idx) => {
+        const info = this.parseAttachment(att);
         const card = document.createElement('div');
         card.className = 'attachment-card';
-        const isBase64Image = att.startsWith('data:image/');
-        const isUrl = /^https?:\/\//i.test(att);
-        const isImageUrl = isUrl && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(att);
 
-        if (isBase64Image || isImageUrl) {
+        if (info.isImage) {
           card.innerHTML = `
             <div class="attachment-thumb-wrap" title="點擊放大檢視截圖">
-              <img src="${att}" class="attachment-thumb-img" alt="Screenshot" />
+              <img src="${info.dataUrl}" class="attachment-thumb-img" alt="${this.escapeHtml(info.name)}" />
             </div>
             <div class="attachment-card-footer">
-              <span class="attachment-card-name">🖼️ ${isBase64Image ? `截圖 #${idx + 1}` : this.escapeHtml(this.getAttachmentDisplayName(att))}</span>
-              <button type="button" class="btn-remove-attachment" title="移除此附件">&times;</button>
+              <span class="attachment-card-name" title="${this.escapeHtml(info.name)}">${info.icon} ${this.escapeHtml(info.name)}</span>
+              <div class="attachment-card-actions">
+                <a href="${info.dataUrl}" download="${this.escapeHtml(info.name)}" class="btn-att-action" title="下載圖片">⬇️</a>
+                <button type="button" class="btn-remove-attachment" title="移除此附件">&times;</button>
+              </div>
             </div>
           `;
           card.querySelector('.attachment-thumb-wrap').addEventListener('click', () => {
-            this.openImageModal(att, `Issue #${this.txtIssueId.value || ''} 附件截圖`);
+            this.openImageModal(info.dataUrl, info.name);
           });
-        } else {
+        } else if (info.isText && info.isDataUrl) {
+          const extName = (info.name.split('.').pop() || 'TXT').toUpperCase();
+          card.innerHTML = `
+            <div class="attachment-thumb-wrap attachment-thumb-text" title="點擊檢視/打開文字內容" style="cursor:pointer;">
+              <span class="attachment-file-icon">${info.icon}</span>
+              <span class="attachment-file-type-badge">${this.escapeHtml(extName)}</span>
+            </div>
+            <div class="attachment-card-footer">
+              <span class="attachment-card-name attachment-card-clickable" title="${this.escapeHtml(info.name)}">${info.icon} ${this.escapeHtml(info.name)}</span>
+              <div class="attachment-card-actions">
+                <button type="button" class="btn-att-action btn-view-text" title="預覽/打開文字內容">👁️</button>
+                <a href="${info.dataUrl}" download="${this.escapeHtml(info.name)}" class="btn-att-action" title="下載檔案">⬇️</a>
+                <button type="button" class="btn-remove-attachment" title="移除此附件">&times;</button>
+              </div>
+            </div>
+          `;
+          const openText = () => this.openTextFileModal(info);
+          card.querySelector('.attachment-thumb-wrap').addEventListener('click', openText);
+          card.querySelector('.attachment-card-name').addEventListener('click', openText);
+          card.querySelector('.btn-view-text').addEventListener('click', openText);
+        } else if (info.isDataUrl) {
+          const extName = (info.name.split('.').pop() || 'FILE').toUpperCase();
+          card.innerHTML = `
+            <div class="attachment-thumb-wrap attachment-thumb-text" title="點擊下載檔案" style="cursor:pointer;">
+              <span class="attachment-file-icon">${info.icon}</span>
+              <span class="attachment-file-type-badge">${this.escapeHtml(extName)}</span>
+            </div>
+            <div class="attachment-card-footer">
+              <span class="attachment-card-name" title="${this.escapeHtml(info.name)}">${info.icon} ${this.escapeHtml(info.name)}</span>
+              <div class="attachment-card-actions">
+                <a href="${info.dataUrl}" download="${this.escapeHtml(info.name)}" class="btn-att-action" title="下載檔案">⬇️</a>
+                <button type="button" class="btn-remove-attachment" title="移除此附件">&times;</button>
+              </div>
+            </div>
+          `;
+          card.querySelector('.attachment-thumb-wrap').addEventListener('click', () => {
+            this.downloadAttachment(info);
+          });
+        } else if (info.isUrl) {
           card.innerHTML = `
             <div class="attachment-thumb-wrap" style="cursor:default;">
+              <span class="attachment-file-icon">🔗</span>
+            </div>
+            <div class="attachment-card-footer">
+              <a href="${info.dataUrl}" target="_blank" rel="noopener" class="attachment-link attachment-card-name" title="${this.escapeHtml(info.name)}">🔗 ${this.escapeHtml(info.name)}</a>
+              <div class="attachment-card-actions">
+                <button type="button" class="btn-remove-attachment" title="移除此附件">&times;</button>
+              </div>
+            </div>
+          `;
+        } else {
+          card.innerHTML = `
+            <div class="attachment-thumb-wrap" style="cursor:default;" title="本地路徑紀錄（需重新上傳檔案方可直接在瀏覽器下載與開啟）">
               <span class="attachment-file-icon">📄</span>
             </div>
             <div class="attachment-card-footer">
-              ${isUrl ? `<a href="${att}" target="_blank" class="attachment-link attachment-card-name" rel="noopener">${this.escapeHtml(this.getAttachmentDisplayName(att))}</a>` : `<span class="attachment-card-name" title="${this.escapeHtml(att)}">${this.escapeHtml(this.getAttachmentDisplayName(att))}</span>`}
-              <button type="button" class="btn-remove-attachment" title="移除此附件">&times;</button>
+              <span class="attachment-card-name" title="${this.escapeHtml(att)}">${this.escapeHtml(info.name)}</span>
+              <div class="attachment-card-actions">
+                <button type="button" class="btn-remove-attachment" title="移除此附件">&times;</button>
+              </div>
             </div>
           `;
         }
@@ -1168,6 +1330,63 @@ document.addEventListener('DOMContentLoaded', () => {
 
         this.attachmentListEl.appendChild(card);
       });
+    },
+
+    openTextFileModal(info) {
+      if (!this.textFileModal) return;
+      this.textFileModalTitle.textContent = `📄 ${info.name}`;
+      
+      let textContent = '';
+      try {
+        const base64Index = info.dataUrl.indexOf(';base64,');
+        if (base64Index !== -1) {
+          const b64 = info.dataUrl.substring(base64Index + 8);
+          textContent = this.decodeBase64Utf8(b64);
+        } else {
+          textContent = atob(info.dataUrl.split(',')[1] || '');
+        }
+      } catch (e) {
+        textContent = '無法解碼文字內容：' + e.message;
+      }
+
+      this.textFileModalContent.textContent = textContent;
+      const lines = textContent.split('\n').length;
+      const kb = (textContent.length / 1024).toFixed(1);
+      this.textFileModalInfo.textContent = `檔案大小：約 ${kb} KB (${lines} 行)`;
+      
+      this.btnDownloadFileModal.href = info.dataUrl;
+      this.btnDownloadFileModal.download = info.name;
+
+      this.btnCopyFileContent.onclick = () => {
+        navigator.clipboard.writeText(textContent).then(() => {
+          this.showToast('已複製文字檔案內容至剪貼簿！', 'success');
+        });
+      };
+
+      this.openModal(this.textFileModal);
+    },
+
+    decodeBase64Utf8(base64Str) {
+      try {
+        const binaryStr = atob(base64Str);
+        const bytes = new Uint8Array(binaryStr.length);
+        for (let i = 0; i < binaryStr.length; i++) {
+          bytes[i] = binaryStr.charCodeAt(i);
+        }
+        const decoder = new TextDecoder('utf-8');
+        return decoder.decode(bytes);
+      } catch (e) {
+        return atob(base64Str);
+      }
+    },
+
+    downloadAttachment(info) {
+      const a = document.createElement('a');
+      a.href = info.dataUrl;
+      a.download = info.name || 'download';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     },
 
     getAttachmentDisplayName(path) {

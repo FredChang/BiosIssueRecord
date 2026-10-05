@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BIOS Server Issue Recorder (Online)</title>
-  <link rel="stylesheet" href="css/style.css?v=20261005_01" />
+  <link rel="stylesheet" href="css/style.css?v=20261005_03" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛠️</text></svg>">
 </head>
 <body>
@@ -424,15 +424,36 @@
     </div>
   </div>
 
+  <!-- Text / Log File Viewer Modal -->
+  <div class="modal" id="text-file-modal">
+    <div class="modal-content" style="max-width: 820px; width: 92vw; height: 82vh; max-height: 82vh; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="text-file-modal-title">📄 文字附件檢視器</h3>
+        <button class="btn-remove-attachment modal-close">&times;</button>
+      </div>
+      <div class="modal-body" style="flex: 1; overflow: hidden; display: flex; flex-direction: column; padding: 12px 16px;">
+        <pre id="text-file-modal-content" style="flex: 1; overflow: auto; background: var(--bg-surface-secondary); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-family: var(--font-mono); font-size: 12.5px; line-height: 1.5; white-space: pre-wrap; word-break: break-all; color: var(--text-primary); margin: 0;"></pre>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <span id="text-file-modal-info" style="font-size: 12px; color: var(--text-muted);"></span>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-outline btn-sm" id="btn-copy-file-content">📋 複製內容</button>
+          <a id="btn-download-file-modal" href="#" download="file.txt" class="btn btn-secondary btn-sm" target="_blank">⬇️ 下載檔案</a>
+          <button type="button" class="btn btn-primary btn-sm modal-close">關閉</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Container -->
   <div id="toast-container"></div>
 
   <!-- Supabase Client SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Scripts -->
-  <script src="js/similarity.js?v=20261005_01"></script>
-  <script src="js/supabase-db.js?v=20261005_01"></script>
-  <script src="js/github-sync.js?v=20261005_01"></script>
-  <script src="js/app.js?v=20261005_01"></script>
+  <script src="js/similarity.js?v=20261005_03"></script>
+  <script src="js/supabase-db.js?v=20261005_03"></script>
+  <script src="js/github-sync.js?v=20261005_03"></script>
+  <script src="js/app.js?v=20261005_03"></script>
 </body>
 </html>
