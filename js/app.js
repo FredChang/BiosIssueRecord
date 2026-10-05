@@ -95,6 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
       this.btnNew = document.getElementById('btn-new');
       this.btnSave = document.getElementById('btn-save');
       this.btnDelete = document.getElementById('btn-delete');
+      this.btnClone = document.getElementById('btn-clone');
       this.btnExportMd = document.getElementById('btn-export-md');
       this.btnCopyMd = document.getElementById('btn-copy-md');
       this.btnSync = document.getElementById('btn-sync');
@@ -144,6 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
       this.floatingIssueTag = document.getElementById('floating-issue-tag');
       this.floatingIssueTitle = document.getElementById('floating-issue-title-preview');
       this.btnSaveFloat = document.getElementById('btn-save-float');
+      this.btnCloneFloat = document.getElementById('btn-clone-float');
       this.btnCopyMdFloat = document.getElementById('btn-copy-md-float');
       this.btnScrollTop = document.getElementById('btn-scroll-top');
 
@@ -165,6 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
       this.btnNew.addEventListener('click', () => this.createNewIssue());
       this.btnSave.addEventListener('click', () => this.saveCurrentIssue());
       this.btnDelete.addEventListener('click', () => this.deleteCurrentIssue());
+      this.btnClone?.addEventListener('click', () => this.cloneIssue());
       this.btnExportMd.addEventListener('click', () => this.exportCurrentIssueToMarkdown());
       this.btnCopyMd.addEventListener('click', () => this.copyCurrentIssueMarkdown());
       this.btnSync.addEventListener('click', () => this.syncFromGitHub(true));
@@ -572,6 +575,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="issue-item-header">
             <span class="issue-item-id">#${this.escapeHtml(issue.issue_id || String(issue.id))}</span>
             <div class="issue-item-badges">
+              <button type="button" class="btn-item-clone" title="以此案件為底本快速複製建立新 Issue (Clone)">📑 複製</button>
               <span class="badge ${statusBadgeClass}">${isOpen ? '🔴 Open' : '🟢 Closed'}</span>
             </div>
           </div>
@@ -582,6 +586,14 @@ document.addEventListener('DOMContentLoaded', () => {
             <span class="issue-item-date">${this.escapeHtml(issue.date || '')}</span>
           </div>
         `;
+
+        const btnCloneItem = item.querySelector('.btn-item-clone');
+        if (btnCloneItem) {
+          btnCloneItem.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.cloneIssue(issue);
+          });
+        }
 
         item.addEventListener('click', () => this.selectIssue(issue));
         this.issueListEl.appendChild(item);
@@ -619,6 +631,8 @@ document.addEventListener('DOMContentLoaded', () => {
       this.btnDelete.disabled = false;
       this.btnExportMd.disabled = false;
       this.btnCopyMd.disabled = false;
+      if (this.btnClone) this.btnClone.disabled = false;
+      if (this.btnCloneFloat) this.btnCloneFloat.disabled = false;
       this.updateFormTitle();
       this.similarityBanner.style.display = 'none';
 
@@ -634,6 +648,70 @@ document.addEventListener('DOMContentLoaded', () => {
       this.txtTitle.focus();
       this.showToast('已切換為新增模式', 'info');
       this.renderIssueList();
+    },
+
+    cloneIssue(sourceIssue = null) {
+      const issue = sourceIssue || this.currentIssue;
+      if (!issue) {
+        this.showToast('請先從左側清單選擇要複製的 Issue', 'warning');
+        return;
+      }
+
+      // Calculate next ID
+      let maxIdNum = 0;
+      this.issues.forEach(i => {
+        const num = parseInt(i.issue_id || i.id, 10);
+        if (!isNaN(num) && num > maxIdNum) maxIdNum = num;
+      });
+      const nextIdStr = String(maxIdNum + 1).padStart(4, '0');
+
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`;
+
+      // Reset state to new issue
+      this.currentIssue = null;
+      this.selectedId = null;
+      this.isEditing = false;
+
+      // Fill form fields with source issue values
+      this.txtIssueId.value = nextIdStr;
+      this.txtDate.value = todayStr;
+      this.cmbReporter.value = localStorage.getItem('last_reporter_name') || issue.reporter || '元始天尊';
+      this.txtPlatform.value = issue.platform || '';
+      this.txtReproduceRate.value = issue.reproduce_rate || '100%';
+      this.cmbStatus.value = issue.status || 'Open';
+      this.cmbReproducedOnRef.value = issue.reproduced_on_ref || 'No';
+      this.txtTitle.value = issue.title || '';
+      this.txtCurrentAgesa.value = issue.current_agesa || '';
+      this.txtConfiguration.value = issue.configuration || '';
+      this.txtDescription.value = issue.description || '';
+      this.txtSteps.value = issue.steps || '';
+      this.txtRootcause.value = issue.rootcause || '';
+
+      // Copy attachments
+      this.currentAttachments = [];
+      if (issue.attachments) {
+        const list = issue.attachments.split('\n').map(s => s.trim()).filter(Boolean);
+        this.currentAttachments = [...list];
+      }
+      this.renderAttachmentList();
+
+      // Clear comments for new issue
+      this.renderComments([]);
+
+      // Update button states
+      this.btnDelete.disabled = true;
+      this.btnExportMd.disabled = true;
+      this.btnCopyMd.disabled = true;
+      if (this.btnClone) this.btnClone.disabled = true;
+      if (this.btnCloneFloat) this.btnCloneFloat.disabled = true;
+
+      this.similarityBanner.style.display = 'none';
+      this.updateFormTitle();
+      this.renderIssueList();
+
+      this.txtTitle.focus();
+      this.showToast(`已從 #${issue.issue_id || issue.id} 複製資料！新案件編號為 #${nextIdStr}，編輯完成後點擊「儲存 Issue」即可建立。`, 'success');
     },
 
     resetForm() {
@@ -669,6 +747,8 @@ document.addEventListener('DOMContentLoaded', () => {
       this.btnDelete.disabled = true;
       this.btnExportMd.disabled = true;
       this.btnCopyMd.disabled = true;
+      if (this.btnClone) this.btnClone.disabled = true;
+      if (this.btnCloneFloat) this.btnCloneFloat.disabled = true;
       this.similarityBanner.style.display = 'none';
       this.updateFormTitle();
     },
