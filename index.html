@@ -13,6 +13,7 @@
     <div class="header-left">
       <span class="brand-icon">💻</span>
       <h1 class="brand-title">BIOS Server Issue Recorder</h1>
+      <span class="version-badge" id="app-version-badge" title="目前系統版本 (點擊查看更新詳情)">v2026.10.05-r4</span>
       <div id="cloud-status" class="status-badge status-local" title="GitHub 連線狀態">
         <span>🟡</span> 檢查連線中...
       </div>
@@ -252,7 +253,7 @@
                   <input type="text" id="new-attachment-input" class="form-input" placeholder="輸入雲端連結 (URL) 或點右側按鈕上傳截圖..." />
                   <button type="button" class="btn btn-secondary btn-sm" id="btn-add-attachment">加入連結</button>
                   <button type="button" class="btn btn-outline btn-sm" id="btn-upload-file">📁 上傳截圖/檔案</button>
-                  <input type="file" id="file-attachment-input" accept="image/*,.log,.txt,.pdf,.zip" style="display:none;" />
+                  <input type="file" id="file-attachment-input" multiple style="display:none;" />
                 </div>
               </div>
             </div>

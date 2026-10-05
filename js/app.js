@@ -279,6 +279,11 @@ document.addEventListener('DOMContentLoaded', () => {
         this.updateFormTitle();
       });
 
+      // Version Badge Click Event
+      document.getElementById('app-version-badge')?.addEventListener('click', () => {
+        alert("🚀 【BIOS Issue Recorder 系統版本資訊】\n\n版本編號：v2026.10.05-r4 (最新更新)\n\n📌 本次更新重點：\n1. 【Clone 複製案件】左側清單每筆 Issue 及編輯區新增「📑 複製」按鈕，快速建立新案件。\n2. 【.txt / .log 文字附件】上傳之文字檔支援直接線上開啟預覽 (含複製內容與行數統計)，並可一鍵下載。\n3. 【全檔案格式上傳】開放所有副檔名檔案上傳與下載。\n4. 【UI 避讓優化】修正懸浮快捷列遮擋留言「附加圖片」與「發表留言」操作按鈕。");
+      });
+
       // Floating Action Bar Events
       this.btnSaveFloat?.addEventListener('click', () => this.saveCurrentIssue());
       this.btnCopyMdFloat?.addEventListener('click', () => this.copyCurrentIssueMarkdown());
@@ -1310,16 +1315,26 @@ document.addEventListener('DOMContentLoaded', () => {
           `;
         } else {
           card.innerHTML = `
-            <div class="attachment-thumb-wrap" style="cursor:default;" title="本地路徑紀錄（需重新上傳檔案方可直接在瀏覽器下載與開啟）">
+            <div class="attachment-thumb-wrap attachment-thumb-text" style="cursor:pointer;" title="點擊查看舊版附件說明">
               <span class="attachment-file-icon">📄</span>
+              <span class="attachment-file-type-badge">舊版紀錄</span>
             </div>
             <div class="attachment-card-footer">
-              <span class="attachment-card-name" title="${this.escapeHtml(att)}">${this.escapeHtml(info.name)}</span>
+              <span class="attachment-card-name attachment-card-clickable" title="${this.escapeHtml(att)}">${this.escapeHtml(info.name)}</span>
               <div class="attachment-card-actions">
+                <button type="button" class="btn-att-action btn-view-legacy" title="點擊說明">⚠️</button>
                 <button type="button" class="btn-remove-attachment" title="移除此附件">&times;</button>
               </div>
             </div>
           `;
+
+          const showLegacyNotice = () => {
+            alert(`【舊版紀錄提示】\n\n檔案名稱：${info.name}\n\n此附件是您先前在舊版本建立的「純檔名紀錄」（當時舊系統並未將檔案實際數據存入雲端，因此瀏覽器無法直接預覽）。\n\n👉 如何啟用線上開啟與下載？\n請在下方點擊【📁 上傳截圖/檔案】重新選取您的「${info.name}」檔案並點擊【💾 儲存 Issue】，新系統會將檔案實體內容完整存入雲端，之後即可在網頁直接打開與下載！`);
+          };
+
+          card.querySelector('.attachment-thumb-wrap').addEventListener('click', showLegacyNotice);
+          card.querySelector('.attachment-card-name').addEventListener('click', showLegacyNotice);
+          card.querySelector('.btn-view-legacy')?.addEventListener('click', showLegacyNotice);
         }
 
         card.querySelector('.btn-remove-attachment').addEventListener('click', (e) => {
