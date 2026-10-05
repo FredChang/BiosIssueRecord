@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BIOS Server Issue Recorder (Online)</title>
-  <link rel="stylesheet" href="css/style.css?v=20261005_03" />
+  <link rel="stylesheet" href="css/style.css?v=20261005_04" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛠️</text></svg>">
 </head>
 <body>
@@ -13,7 +13,7 @@
     <div class="header-left">
       <span class="brand-icon">💻</span>
       <h1 class="brand-title">BIOS Server Issue Recorder</h1>
-      <span class="version-badge" id="app-version-badge" title="目前系統版本 (點擊查看更新詳情)">v2026.10.05-r4</span>
+      <span class="version-badge" id="app-version-badge" title="目前系統版本 (點擊查看更新詳情)">v2026.10.05-r5</span>
       <div id="cloud-status" class="status-badge status-local" title="GitHub 連線狀態">
         <span>🟡</span> 檢查連線中...
       </div>
@@ -88,6 +88,11 @@
         <!-- Dynamic Issue Items -->
       </div>
     </aside>
+
+    <!-- Sidebar Collapse / Expand Toggle Arrow Button -->
+    <button type="button" class="sidebar-toggle-btn" id="btn-sidebar-toggle" title="收合左側清單 (快捷鍵: Alt+S)">
+      <span class="sidebar-toggle-icon" id="sidebar-toggle-icon">◀</span>
+    </button>
 
     <!-- Main Content / Issue Editor -->
     <main class="main-content">
@@ -452,9 +457,9 @@
   <!-- Supabase Client SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Scripts -->
-  <script src="js/similarity.js?v=20261005_03"></script>
-  <script src="js/supabase-db.js?v=20261005_03"></script>
-  <script src="js/github-sync.js?v=20261005_03"></script>
-  <script src="js/app.js?v=20261005_03"></script>
+  <script src="js/similarity.js?v=20261005_04"></script>
+  <script src="js/supabase-db.js?v=20261005_04"></script>
+  <script src="js/github-sync.js?v=20261005_04"></script>
+  <script src="js/app.js?v=20261005_04"></script>
 </body>
 </html>

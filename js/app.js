@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async init() {
       this.checkUrlParameters();
       this.bindElements();
+      this.initSidebarState();
       this.bindEvents();
       this.applyTheme();
       this.loadSettings();
@@ -65,6 +66,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     bindElements() {
       // Containers & Lists
+      this.sidebar = document.querySelector('.sidebar');
+      this.btnSidebarToggle = document.getElementById('btn-sidebar-toggle');
+      this.sidebarToggleIcon = document.getElementById('sidebar-toggle-icon');
       this.issueListEl = document.getElementById('issue-list');
       this.issueCountEl = document.getElementById('issue-count');
       this.statOpenBadge = document.getElementById('stat-open-badge');
@@ -368,6 +372,42 @@ document.addEventListener('DOMContentLoaded', () => {
             this.resetImageZoom(2.0);
           }
         });
+      }
+      // Sidebar Toggle Arrow Button
+      this.btnSidebarToggle?.addEventListener('click', () => this.toggleSidebar());
+
+      // Global shortcut Alt+S or Ctrl+B to toggle sidebar
+      document.addEventListener('keydown', (e) => {
+        if ((e.altKey && e.key.toLowerCase() === 's') || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b')) {
+          e.preventDefault();
+          this.toggleSidebar();
+        }
+      });
+    },
+
+    toggleSidebar(forceState = null) {
+      if (!this.sidebar || !this.btnSidebarToggle) return;
+      const isCurrentlyCollapsed = this.sidebar.classList.contains('collapsed');
+      const shouldCollapse = forceState !== null ? forceState : !isCurrentlyCollapsed;
+
+      if (shouldCollapse) {
+        this.sidebar.classList.add('collapsed');
+        this.btnSidebarToggle.classList.add('collapsed');
+        this.btnSidebarToggle.title = '展開左側清單 (快捷鍵: Alt+S)';
+        if (this.sidebarToggleIcon) this.sidebarToggleIcon.textContent = '▶';
+        localStorage.setItem('sidebar_collapsed', '1');
+      } else {
+        this.sidebar.classList.remove('collapsed');
+        this.btnSidebarToggle.classList.remove('collapsed');
+        this.btnSidebarToggle.title = '收合左側清單 (快捷鍵: Alt+S)';
+        if (this.sidebarToggleIcon) this.sidebarToggleIcon.textContent = '◀';
+        localStorage.setItem('sidebar_collapsed', '0');
+      }
+    },
+
+    initSidebarState() {
+      if (localStorage.getItem('sidebar_collapsed') === '1') {
+        this.toggleSidebar(true);
       }
     },
 
