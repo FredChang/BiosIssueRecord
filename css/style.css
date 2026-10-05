@@ -480,7 +480,7 @@ body {
 }
 
 .editor-container {
-  padding: 24px;
+  padding: 24px 24px 100px 24px;
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
@@ -1112,6 +1112,7 @@ body {
 .new-comment-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
 }
 
 /* Modals */
@@ -1241,8 +1242,18 @@ body {
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
   z-index: 90;
   backdrop-filter: blur(12px);
-  animation: float-bar-in 0.3s ease;
-  transition: all 0.2s ease;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px);
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+  pointer-events: none;
+}
+
+.floating-save-bar.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 
 [data-theme="dark"] .floating-save-bar {
@@ -1271,11 +1282,6 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-}
-
-@keyframes float-bar-in {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
 }
 
 /* Image Modal Zoom & Pan Enhancements */

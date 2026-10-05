@@ -281,6 +281,24 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.scrollTo({ top: 0, behavior: 'smooth' });
       });
 
+      // Show floating action bar only when scrolled down
+      const mainContent = document.querySelector('.main-content');
+      const updateFloatingBarVisibility = () => {
+        const scrollY = (mainContent ? mainContent.scrollTop : 0) || window.scrollY || document.documentElement.scrollTop || 0;
+        if (this.floatingSaveBar) {
+          if (scrollY > 150) {
+            this.floatingSaveBar.classList.add('visible');
+          } else {
+            this.floatingSaveBar.classList.remove('visible');
+          }
+        }
+      };
+
+      if (mainContent) {
+        mainContent.addEventListener('scroll', updateFloatingBarVisibility, { passive: true });
+      }
+      window.addEventListener('scroll', updateFloatingBarVisibility, { passive: true });
+
       // Global Keyboard Shortcut: Ctrl + S / Cmd + S to save issue
       document.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
