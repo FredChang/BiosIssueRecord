@@ -166,7 +166,7 @@
     "date": "2026/10/5",
     "steps": "1. Power on the system.\n2. Check that all USB ports work properly in the BIOS Setup menu or UEFI Shell.",
     "title": "FW Download support for Renesas uPD720201 USB Controller.",
-    "status": "Open",
+    "status": "Closed",
     "comments": [
       {
         "id": "c_1793593561304",
@@ -184,10 +184,10 @@
       },
       {
         "id": "c_1793593935648",
-        "author": "元始天尊",
         "date": "2026/11/2 12:32",
-        "content": "Conclusion: Using a Physical SPI ROM.\n1. Hardware Auto-Reload: The Renesas controller automatically reloads its firmware from the physical ROM on every reset, requiring zero software intervention.\n2. 100% OS Compatibility: Eliminates dependency on the renesas_usb_fw.mem file, permanently fixing USB disconnection issues across all Linux installers.\n3. Simplified BIOS: The BIOS loader (OdmRenesasUsbFw) can be disabled, reducing firmware complexity and boot time.",
-        "images": []
+        "author": "元始天尊",
+        "images": [],
+        "content": "Conclusion: Using a Physical SPI ROM.\n1. Hardware Auto-Reload: The Renesas controller automatically reloads its firmware from the physical ROM on every reset, requiring zero software intervention.\n2. 100% OS Compatibility: Eliminates dependency on the renesas_usb_fw.mem file, permanently fixing USB disconnection issues across all Linux installers.\n3. Simplified BIOS: The BIOS loader (OdmRenesasUsbFw) can be disabled, reducing firmware complexity and boot time."
       }
     ],
     "issue_id": "0010",
