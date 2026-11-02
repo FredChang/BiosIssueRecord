@@ -281,7 +281,7 @@
     "date": "2026/10/15",
     "steps": "1. Power on the system.\n2. The monitor lights up before DXE phase.",
     "title": "Implement AMI Early Video on ASPEED AST2600 (Pre-Memory and Post-Memory Support)",
-    "status": "Open",
+    "status": "Closed",
     "comments": [
       {
         "id": "c_1792052327386",
@@ -319,10 +319,10 @@
       },
       {
         "id": "c_1793592963280",
-        "author": "元始天尊",
         "date": "2026/11/2 12:16",
-        "content": "Conclusion:\nThe AMI Early Video Post-Memory Mode is currently the best option for BIOS implementation. To display POST codes or BMC IP information during the pre-memory stage, BIOS and BMC video output must work together to ensure a smooth user experience.",
-        "images": []
+        "author": "元始天尊",
+        "images": [],
+        "content": "Conclusion:\nThe AMI Early Video Post-Memory Mode is currently the best option for BIOS implementation. To display POST codes or BMC IP information during the pre-memory stage, BIOS and BMC video output must work together to ensure a smooth user experience."
       }
     ],
     "issue_id": "0015",
