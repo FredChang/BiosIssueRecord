@@ -309,6 +309,13 @@
         "author": "元始天尊",
         "images": [],
         "content": "Pre-Memory Mode:\n Add the following token settings based on the Post-Memory Mode implementation. These settings are dependent on BUILD_FSP_BINARY = 0; otherwise, a build error will occur.\nTOKEN\n    Name  = \"ENABLE_EARLY_VIDEO_BEFORE_MEMORY\"\n    Value  = \"1\"\n    Help  = \"0 -> Support Early VGA after memory installed, 1 -> Support Early VGA before memory installed\"\n    TokenType = Boolean\n    TargetH = Yes\n    Token = \"BUILD_FSP_BINARY\" \"=\" \"0\"\nEnd\n\nTOKEN\n    Name  = \"ENABLE_EARLY_VIDEO_BEFORE_MEMORY\"\n    Value  = \"0\"\n    Help  = \"Early video is not part of the FSP binary build\"\n    TokenType = Boolean\n    TargetH = Yes\n    Token = \"BUILD_FSP_BINARY\" \"=\" \"1\"\nEnd\n\nPcdMapping\n    Name  = \"AmiPcdEarlyConsoleVideoMode\"\n    GuidSpace  = \"gAmiEarlyConsolePkgTokenSpaceGuid\"\n    PcdType  = \"PcdsFixedAtBuild\"\n    DataType  = \"UINT32\"\n    Value  = \"0\"\n    Offset  = 00h\n    Length  = 00h\n    TargetDSC = Yes\n    Token = \"BUILD_FSP_BINARY\" \"=\" \"0\"\nEnd"
+      },
+      {
+        "id": "c_1793592586076",
+        "author": "元始天尊",
+        "date": "2026/11/2 12:09",
+        "content": "Pre-Memory Mode Issues:\n1. Screen Flickering: Pre-Memory uses legacy VGA (640×480), but DXE switches to high resolution \n(1024×768+). This resolution switch forces the monitor to re-sync, causing visible screen blanking and flickering.\n2. Warm Reboot Physical Display Failure: On a warm reboot, the AST2600 display engine is not cleanly reset in the Pre-Memory phase. While BMC KVM still captures the frame buffer directly, physical monitors lose video sync signals and stay black until Shell/DXE.",
+        "images": []
       }
     ],
     "issue_id": "0015",
