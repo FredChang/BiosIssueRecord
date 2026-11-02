@@ -312,9 +312,16 @@
       },
       {
         "id": "c_1793592586076",
-        "author": "元始天尊",
         "date": "2026/11/2 12:09",
-        "content": "Pre-Memory Mode Issues:\n1. Screen Flickering: Pre-Memory uses legacy VGA (640×480), but DXE switches to high resolution \n(1024×768+). This resolution switch forces the monitor to re-sync, causing visible screen blanking and flickering.\n2. Warm Reboot Physical Display Failure: On a warm reboot, the AST2600 display engine is not cleanly reset in the Pre-Memory phase. While BMC KVM still captures the frame buffer directly, physical monitors lose video sync signals and stay black until Shell/DXE.",
+        "author": "元始天尊",
+        "images": [],
+        "content": "Pre-Memory Mode Issues:\n1. Screen Flickering: Pre-Memory uses legacy VGA (640×480), but DXE switches to high resolution \n(1024×768+). This resolution switch forces the monitor to re-sync, causing visible screen blanking and flickering.\n2. Warm Reboot Physical Display Failure: On a warm reboot, the AST2600 display engine is not cleanly reset in the Pre-Memory phase. While BMC KVM still captures the frame buffer directly, physical monitors lose video sync signals and stay black until Shell/DXE."
+      },
+      {
+        "id": "c_1793592963280",
+        "author": "元始天尊",
+        "date": "2026/11/2 12:16",
+        "content": "Conclusion:\nThe AMI Early Video Post-Memory Mode is currently the best option for BIOS implementation. To display POST codes or BMC IP information during the pre-memory stage, BIOS and BMC video output must work together to ensure a smooth user experience.",
         "images": []
       }
     ],
