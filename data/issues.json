@@ -167,7 +167,15 @@
     "steps": "1. Power on the system.\n2. Check that all USB ports work properly in the BIOS Setup menu or UEFI Shell.",
     "title": "FW Download support for Renesas uPD720201 USB Controller.",
     "status": "Open",
-    "comments": [],
+    "comments": [
+      {
+        "id": "c_1793593561304",
+        "date": "2026/11/2 12:26",
+        "author": "元始天尊",
+        "images": [],
+        "content": "Hardware Background (ROM-less Architecture):\nThe Renesas μPD720201 (4-port) and μPD720202 (2-port) PCIe-to-USB 3.0 (xHCI) controllers require firmware to operate.\nTo reduce BOM cost and save PCB routing space, hardware designs often omit the external SPI ROM/EEPROM (ROM-less mode). Upon power-on, the chip boots without firmware and enters a \"waiting for host download\" state.\n========================================================================\nRole of OdmRenesasUsbFw in BIOS:\nIn the PEI / DXE phase, the BIOS acts as the host loader.\nWhen a Renesas controller (VID:DID = 0x1912:0x0014 or 0x0015) is detected, the driver dynamically transfers the embedded firmware binary (RenesasFirmware.inc, ~8KB–32KB) into the controller's internal SRAM via PCI configuration space registers (0xF4–0xFC).\nOnce downloaded and locked, the xHCI controller becomes active, enabling USB keyboards, mice, and bootable USB drives in the UEFI environment."
+      }
+    ],
     "issue_id": "0010",
     "platform": "Intel Birch Stream SP",
     "reporter": "元始天尊",
