@@ -174,6 +174,13 @@
         "author": "元始天尊",
         "images": [],
         "content": "Hardware Background (ROM-less Architecture):\nThe Renesas μPD720201 (4-port) and μPD720202 (2-port) PCIe-to-USB 3.0 (xHCI) controllers require firmware to operate.\nTo reduce BOM cost and save PCB routing space, hardware designs often omit the external SPI ROM/EEPROM (ROM-less mode). Upon power-on, the chip boots without firmware and enters a \"waiting for host download\" state.\n========================================================================\nRole of OdmRenesasUsbFw in BIOS:\nIn the PEI / DXE phase, the BIOS acts as the host loader.\nWhen a Renesas controller (VID:DID = 0x1912:0x0014 or 0x0015) is detected, the driver dynamically transfers the embedded firmware binary (RenesasFirmware.inc, ~8KB–32KB) into the controller's internal SRAM via PCI configuration space registers (0xF4–0xFC).\nOnce downloaded and locked, the xHCI controller becomes active, enabling USB keyboards, mice, and bootable USB drives in the UEFI environment."
+      },
+      {
+        "id": "c_1793593799722",
+        "author": "元始天尊",
+        "date": "2026/11/2 12:29",
+        "content": "Issue_USB Devices Are Lost After Entering the Linux Installation Screen:\nWhile USB devices work reliably under UEFI Shell and the GRUB bootloader menu, they frequently disconnect once entering a Linux installer environment (e.g., RedHat Ubuntu24.04, Debian Installer, LiveCD). This occurs due to the following factors:\nSRAM Volatility & Controller Reset:\n1. Missing Firmware Blob in the Installer Initramfs:\nKernel Driver Behavior: Modern Linux kernels (kernel ≥ 5.10 + ≥5.10+ with xhci-pci-renesas.c) detect that the controller requires firmware after reset and execute:\nrequest_firmware(&fw, \"renesas_usb_fw.mem\", dev);\nStripped Installer Environment: Most Linux installation media use a minimal initramfs / squashfs to keep image sizes small, which excludes the proprietary renesas_usb_fw.mem blob (normally found only in full linux-firmware packages).\n2. Failure Outcome: When request_firmware() fails with -ENOENT (file not found), driver probing aborts. The controller remains uninitialized, leaving the system with no working USB ports during installation.\nUEFI ExitBootServices() Handoff:\nOnce the bootloader transitions execution to the OS kernel via ExitBootServices(), the BIOS DXE driver is permanently unloaded.\nThe BIOS can no longer re-inject the firmware in the background; the platform becomes 100% reliant on the OS kernel and its root filesystem.",
+        "images": []
       }
     ],
     "issue_id": "0010",
