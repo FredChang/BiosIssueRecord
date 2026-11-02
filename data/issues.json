@@ -177,9 +177,16 @@
       },
       {
         "id": "c_1793593799722",
-        "author": "元始天尊",
         "date": "2026/11/2 12:29",
-        "content": "Issue_USB Devices Are Lost After Entering the Linux Installation Screen:\nWhile USB devices work reliably under UEFI Shell and the GRUB bootloader menu, they frequently disconnect once entering a Linux installer environment (e.g., RedHat Ubuntu24.04, Debian Installer, LiveCD). This occurs due to the following factors:\nSRAM Volatility & Controller Reset:\n1. Missing Firmware Blob in the Installer Initramfs:\nKernel Driver Behavior: Modern Linux kernels (kernel ≥ 5.10 + ≥5.10+ with xhci-pci-renesas.c) detect that the controller requires firmware after reset and execute:\nrequest_firmware(&fw, \"renesas_usb_fw.mem\", dev);\nStripped Installer Environment: Most Linux installation media use a minimal initramfs / squashfs to keep image sizes small, which excludes the proprietary renesas_usb_fw.mem blob (normally found only in full linux-firmware packages).\n2. Failure Outcome: When request_firmware() fails with -ENOENT (file not found), driver probing aborts. The controller remains uninitialized, leaving the system with no working USB ports during installation.\nUEFI ExitBootServices() Handoff:\nOnce the bootloader transitions execution to the OS kernel via ExitBootServices(), the BIOS DXE driver is permanently unloaded.\nThe BIOS can no longer re-inject the firmware in the background; the platform becomes 100% reliant on the OS kernel and its root filesystem.",
+        "author": "元始天尊",
+        "images": [],
+        "content": "Issue_USB Devices Are Lost After Entering the Linux Installation Screen:\nWhile USB devices work reliably under UEFI Shell and the GRUB bootloader menu, they frequently disconnect once entering a Linux installer environment (e.g., RedHat Ubuntu24.04, Debian Installer, LiveCD). This occurs due to the following factors:\nSRAM Volatility & Controller Reset:\n1. Missing Firmware Blob in the Installer Initramfs:\nKernel Driver Behavior: Modern Linux kernels (kernel ≥ 5.10 + ≥5.10+ with xhci-pci-renesas.c) detect that the controller requires firmware after reset and execute:\nrequest_firmware(&fw, \"renesas_usb_fw.mem\", dev);\nStripped Installer Environment: Most Linux installation media use a minimal initramfs / squashfs to keep image sizes small, which excludes the proprietary renesas_usb_fw.mem blob (normally found only in full linux-firmware packages).\n2. Failure Outcome: When request_firmware() fails with -ENOENT (file not found), driver probing aborts. The controller remains uninitialized, leaving the system with no working USB ports during installation.\nUEFI ExitBootServices() Handoff:\nOnce the bootloader transitions execution to the OS kernel via ExitBootServices(), the BIOS DXE driver is permanently unloaded.\nThe BIOS can no longer re-inject the firmware in the background; the platform becomes 100% reliant on the OS kernel and its root filesystem."
+      },
+      {
+        "id": "c_1793593935648",
+        "author": "元始天尊",
+        "date": "2026/11/2 12:32",
+        "content": "Conclusion: Using a Physical SPI ROM.\n1. Hardware Auto-Reload: The Renesas controller automatically reloads its firmware from the physical ROM on every reset, requiring zero software intervention.\n2. 100% OS Compatibility: Eliminates dependency on the renesas_usb_fw.mem file, permanently fixing USB disconnection issues across all Linux installers.\n3. Simplified BIOS: The BIOS loader (OdmRenesasUsbFw) can be disabled, reducing firmware complexity and boot time.",
         "images": []
       }
     ],
