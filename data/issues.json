@@ -357,5 +357,23 @@
     "current_agesa": "5.35_0ACQZ_3545P53_GNRAP_GNRSP_SRFSP_110",
     "reproduce_rate": "100%",
     "reproduced_on_ref": "No"
+  },
+  {
+    "id": 1793959068795,
+    "date": "2026/11/6",
+    "steps": "1. Boot to Windows.\n2. Plug E1.S NVMe device.\n3. Verify E1.S functionality.",
+    "title": "E1.S NVMe device hotplug under OS causes device yellow bang (code 10).",
+    "status": "Closed",
+    "comments": [],
+    "issue_id": "0016",
+    "platform": "Intel Birch Stream SP",
+    "reporter": "元始天尊",
+    "rootcause": "",
+    "attachments": "",
+    "description": "When an E1.S NVMe device is hot-plugged in Windows, the OS fails to detect the device and Device Manager reports a Yellow Bang (Code 10). Currently, only one port has been tested, and it is unclear whether the issue affects other ports. The same port works normally under Linux Ubuntu24.04",
+    "configuration": "CPU:  Intel(R) Xeon(R)6507P Processor(L1 stepping), 2 sockets\nMemory:  Samsung DRx8 32GB RDIMM, Memory Speed: 6400MT/s",
+    "current_agesa": "5.35_0ACQZ_3544P80_GNRAP_GNRSP_110",
+    "reproduce_rate": "100%",
+    "reproduced_on_ref": "No"
   }
 ]
